@@ -351,13 +351,20 @@ select, input { font-family: inherit; }
         <div class="flabel">Sân</div>
         <div class="sel-w">
           <select class="sel" id="inp-court">
-            <option value="">-- Chọn sân --</option>
-            <option>Sân 1</option><option>Sân 2</option><option>Sân 3</option>
-            <option>Sân 4</option><option>Sân 5</option><option>Sân 6</option>
-            <option>Sân 7</option><option>Sân 8</option><option>Sân 9</option>
-            <option>Sân 10</option><option>Sân A</option><option>Sân B</option>
-            <option>Sân C</option><option>Sân D</option><option>Sân D6</option>
-            <option>Sân D7</option><option>Sân D8</option>
+<option value="">-- Chọn sân --</option>
+              <option>Sân 1</option><option>Sân 2</option><option>Sân 3</option>
+              <option>Sân 4</option><option>Sân 5</option><option>Sân 6</option>
+              <option>Sân 7</option><option>Sân 8</option><option>Sân 9</option>
+              <option>Sân 10</option>
+              <option>Sân A1</option><option>Sân A2</option><option>Sân A3</option>
+              <option>Sân A4</option><option>Sân A5</option><option>Sân A6</option>
+              <option>Sân A7</option>
+              <option>Sân B1</option><option>Sân B2</option><option>Sân B3</option>
+              <option>Sân B4</option><option>Sân B5</option><option>Sân B6</option>
+              <option>Sân B7</option><option>Sân B8</option>
+              <option>Sân D1</option><option>Sân D2</option><option>Sân D3</option>
+              <option>Sân D4</option><option>Sân D5</option><option>Sân D6</option>
+              <option>Sân D7</option><option>Sân D8</option>
           </select>
         </div>
       </div>
@@ -535,8 +542,15 @@ select, input { font-family: inherit; }
           <option>Sân 1</option><option>Sân 2</option><option>Sân 3</option>
           <option>Sân 4</option><option>Sân 5</option><option>Sân 6</option>
           <option>Sân 7</option><option>Sân 8</option><option>Sân 9</option>
-          <option>Sân 10</option><option>Sân A</option><option>Sân B</option>
-          <option>Sân C</option><option>Sân D</option><option>Sân D6</option>
+          <option>Sân 10</option>
+          <option>Sân A1</option><option>Sân A2</option><option>Sân A3</option>
+          <option>Sân A4</option><option>Sân A5</option><option>Sân A6</option>
+          <option>Sân A7</option>
+          <option>Sân B1</option><option>Sân B2</option><option>Sân B3</option>
+          <option>Sân B4</option><option>Sân B5</option><option>Sân B6</option>
+          <option>Sân B7</option><option>Sân B8</option>
+          <option>Sân D1</option><option>Sân D2</option><option>Sân D3</option>
+          <option>Sân D4</option><option>Sân D5</option><option>Sân D6</option>
           <option>Sân D7</option><option>Sân D8</option>
         </select>
       </div>
@@ -712,47 +726,55 @@ select, input { font-family: inherit; }
   <div class="modal-box">
     <h2>➕ Thêm trận thủ công</h2>
     <div class="add-form">
+      <!-- Nội dung: lấy từ matchList giống Cài đặt -->
       <div>
         <div class="flabel">Nội dung thi đấu</div>
         <div class="sel-w">
           <select class="sel" id="am-nd">
             <option value="">-- Chọn nội dung --</option>
-            <option>Đôi Nam 5.4</option>
-            <option>Đôi Nữ 5.4</option>
-            <option>Đôi Nam Nữ 5.2</option>
-            <option>Đôi Hỗn Hợp 5.3</option>
-            <option>Đôi Nam 4.0</option>
-            <option>Đôi Nữ 4.0</option>
-            <option>Đôi Hỗn Hợp 4.0</option>
-            <option>Đôi Nam 3.5</option>
-            <option>Đôi Nữ 3.5</option>
-            <option>Đôi Hỗn Hợp 3.5</option>
-            <option>Đôi Nam ≤45</option>
-            <option>Đôi Nữ ≤45</option>
-            <option>Đôi Nam Nữ ≤45</option>
-            <option>Đôi Nam ≥45</option>
-            <option>Đôi Nữ ≥45</option>
-            <option>Đôi Nam Nữ ≥45</option>
-            <option>Đơn Nam</option>
-            <option>Đơn Nữ</option>
           </select>
         </div>
       </div>
+      <!-- Bảng: lấy từ matchList giống Cài đặt -->
       <div>
-        <div class="flabel">Vòng / Bảng</div>
+        <div class="flabel">Bảng</div>
         <div class="sel-w">
           <select class="sel" id="am-bang">
             <option value="">-- Chọn bảng --</option>
-            <option>Bảng A</option><option>Bảng B</option><option>Bảng C</option>
-            <option>Bảng D</option><option>Bảng E</option><option>Bảng F</option>
-            <option>Vòng loại</option><option>Tứ kết</option>
-            <option>Bán kết</option><option>Chung kết</option>
           </select>
         </div>
       </div>
-      <div><div class="flabel">Mã trận</div><input class="inp" id="am-code" placeholder="VD: NN-1, A1, B3…"></div>
+      <div><div class="flabel">Mã trận</div><input class="inp" id="am-code" placeholder="VD: A1, BK1, VL3…"></div>
       <div><div class="flabel">Tên Đội A</div><input class="inp" id="am-a" placeholder="Họ tên / CLB Đội A"></div>
       <div><div class="flabel">Tên Đội B</div><input class="inp" id="am-b" placeholder="Họ tên / CLB Đội B"></div>
+      <!-- Hàng Sân + Trọng tài -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <div class="flabel">Sân</div>
+          <div class="sel-w">
+            <select class="sel" id="am-court">
+<option value="">-- Chọn sân --</option>
+              <option>Sân 1</option><option>Sân 2</option><option>Sân 3</option>
+              <option>Sân 4</option><option>Sân 5</option><option>Sân 6</option>
+              <option>Sân 7</option><option>Sân 8</option><option>Sân 9</option>
+              <option>Sân 10</option>
+              <option>Sân A1</option><option>Sân A2</option><option>Sân A3</option>
+              <option>Sân A4</option><option>Sân A5</option><option>Sân A6</option>
+              <option>Sân A7</option>
+              <option>Sân B1</option><option>Sân B2</option><option>Sân B3</option>
+              <option>Sân B4</option><option>Sân B5</option><option>Sân B6</option>
+              <option>Sân B7</option><option>Sân B8</option>
+              <option>Sân D1</option><option>Sân D2</option><option>Sân D3</option>
+              <option>Sân D4</option><option>Sân D5</option><option>Sân D6</option>
+              <option>Sân D7</option><option>Sân D8</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="flabel">Trọng tài</div>
+          <input class="inp" id="am-ref" placeholder="Họ tên trọng tài">
+        </div>
+      </div>
     </div>
     <div class="modal-btns">
       <button class="m-btn no" onclick="closeModal('modal-add')">Huỷ</button>
@@ -1233,32 +1255,73 @@ function clearMatches() {
 }
 
 function openAddModal() {
-  // Pre-fill from main settings dropdowns
-  const nd   = document.getElementById('sel-noidung').value;
-  const bang = document.getElementById('sel-bang').value;
-  if (nd)   document.getElementById('am-nd').value   = nd;
-  if (bang) document.getElementById('am-bang').value = bang;
-  document.getElementById('am-code').value = '';
-  document.getElementById('am-a').value    = '';
-  document.getElementById('am-b').value    = '';
+  // Rebuild dropdown Nội dung từ matchList (giống Cài đặt trận đấu)
+  const ndSel   = document.getElementById('am-nd');
+  const bangSel = document.getElementById('am-bang');
+
+  const nds   = [...new Set(matchList.map(m => m.noidung).filter(Boolean))];
+  const bangs = [...new Set(matchList.map(m => m.bang).filter(Boolean))];
+
+  ndSel.innerHTML = '<option value="">-- Chọn nội dung --</option>';
+  nds.forEach(nd => {
+    const opt = document.createElement('option'); opt.value = nd; opt.textContent = nd;
+    ndSel.appendChild(opt);
+  });
+
+  bangSel.innerHTML = '<option value="">-- Chọn bảng --</option>';
+  bangs.forEach(b => {
+    const opt = document.createElement('option'); opt.value = b; opt.textContent = b;
+    bangSel.appendChild(opt);
+  });
+
+  // Pre-fill từ Cài đặt trận đấu hiện tại
+  const curND   = document.getElementById('sel-noidung').value;
+  const curBang = document.getElementById('sel-bang').value;
+  const curCourt= document.getElementById('inp-court').value;
+  const curRef  = document.getElementById('inp-referee').value;
+
+  if (curND   && nds.includes(curND))     ndSel.value   = curND;
+  if (curBang && bangs.includes(curBang)) bangSel.value = curBang;
+
+  document.getElementById('am-code').value  = '';
+  document.getElementById('am-a').value     = '';
+  document.getElementById('am-b').value     = '';
+  document.getElementById('am-court').value = curCourt || '';
+  document.getElementById('am-ref').value   = curRef   || '';
+
   document.getElementById('modal-add').classList.add('show');
+  // Focus vào ô mã trận
+  setTimeout(() => document.getElementById('am-code').focus(), 200);
 }
 
 function confirmAdd() {
-  const nd  = document.getElementById('am-nd').value;
-  const bang= document.getElementById('am-bang').value;
-  const code= document.getElementById('am-code').value.trim();
-  const tA  = document.getElementById('am-a').value.trim();
-  const tB  = document.getElementById('am-b').value.trim();
-  if (!nd)          { toast('⚠️ Chọn Nội dung thi đấu!'); return; }
-  if (!bang)        { toast('⚠️ Chọn Vòng / Bảng!'); return; }
+  const nd   = document.getElementById('am-nd').value;
+  const bang = document.getElementById('am-bang').value;
+  const code = document.getElementById('am-code').value.trim();
+  const tA   = document.getElementById('am-a').value.trim();
+  const tB   = document.getElementById('am-b').value.trim();
+  const court= document.getElementById('am-court').value;
+  const ref  = document.getElementById('am-ref').value.trim();
+
+  if (!nd)           { toast('⚠️ Chọn Nội dung thi đấu!'); return; }
+  if (!bang)         { toast('⚠️ Chọn Bảng!'); return; }
   if (!code||!tA||!tB) { toast('⚠️ Điền đủ Mã trận, Đội A, Đội B!'); return; }
-  const key=`${nd}|${bang}|${code}`;
-  if (matchList.find(x=>x.key===key)) { toast('⚠️ Trận đã tồn tại!'); return; }
-  matchList.push({noidung:nd, bang, code, teamA:tA, teamB:tB, matchScoreA:null, matchScoreB:null, key});
-  saveMatchList(); renderMatchGrid();
+
+  const key = `${nd}|${bang}|${code}`;
+  if (matchList.find(x => x.key === key)) { toast('⚠️ Trận đã tồn tại!'); return; }
+
+  matchList.push({ noidung:nd, bang, code, teamA:tA, teamB:tB, matchScoreA:null, matchScoreB:null, key });
+  saveMatchList();
+
+  // Đồng bộ lại cài đặt chính
+  syncDropdownsFromData(false);
+  document.getElementById('sel-noidung').value = nd;
+  document.getElementById('sel-bang').value    = bang;
+  if (court) document.getElementById('inp-court').value   = court;
+  if (ref)   document.getElementById('inp-referee').value = ref;
+
   closeModal('modal-add');
-  toast(`✅ Đã thêm: ${nd} – ${bang} – ${code}`);
+  toast(`✅ Đã thêm: ${code} – ${tA} vs ${tB}`);
 }
 
 // ══════════════════════════════════════════
