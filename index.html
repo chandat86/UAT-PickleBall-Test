@@ -265,14 +265,17 @@ select, input { font-family: inherit; }
 </div>
   <div class="hdr-right">
     <div class="gs-pill"><div class="gs-dot" id="gs-dot"></div><span id="gs-txt">GSheets</span></div>
-    <button class="btn-csv" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn-csv" onclick="exportCSV()" style="display:none">⬇ CSV</button>
   </div>
 </div>
 
 <!-- ── GOOGLE SHEETS – KẾT NỐI ĐẦU TIÊN ── -->
 <div class="card" id="gs-card">
   <div class="card-hd" onclick="toggle(this)">
-    <div class="card-hd-left">🔗 Google Sheets <span class="badge" id="gs-badge">Chưa kết nối</span></div>
+    <div class="card-hd-left" style="display:flex;align-items:center;gap:8px;flex:1">
+      🔗 GS <span class="badge" id="gs-badge">Chưa kết nối</span>
+      <button class="gsbtn load" onclick="event.stopPropagation();loadAllFromGS()" style="padding:5px 10px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:8px;margin-left:4px">🔄 Tải trận + kết quả</button>
+    </div>
     <span class="chevron">▾</span>
   </div>
   <div class="card-body">
@@ -281,7 +284,7 @@ select, input { font-family: inherit; }
     </div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <div>
-        <div class="flabel">Apps Script Web App URL</div>
+        <div class="flabel">Nhập URL GAS</div>
         <div class="gs-row">
           <input class="inp" id="gs-url" placeholder="https://script.google.com/macros/s/…/exec">
           <button class="gsbtn save" onclick="saveGsUrl()">💾 Lưu</button>
@@ -289,7 +292,6 @@ select, input { font-family: inherit; }
         </div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="gsbtn load" onclick="loadAllFromGS()" style="flex:1">🔄 Tải trận + kết quả</button>
         <button class="gsbtn save" onclick="pushMatchToGS()" style="flex:1;background:var(--blue)">⬆ Đẩy trận lên GSheet</button>
         <button class="gsbtn test" onclick="debugMatches()" style="flex:1;background:#8b5cf6">🔍 Kiểm tra dữ liệu</button>
       </div>
