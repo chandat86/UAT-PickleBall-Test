@@ -71,6 +71,8 @@ select, input { font-family: inherit; }
 .sel-w::after { content:'▾'; position:absolute; right:9px; top:50%; transform:translateY(-50%); color:var(--g400); pointer-events:none; font-size:11px; }
 .inp, .sel { width:100%; border:1.5px solid var(--g200); border-radius:8px; padding:8px 10px; font-size:13px; background:var(--g50); color:var(--g900); outline:none; -webkit-appearance:none; appearance:none; transition:border-color .15s, background .15s; }
 .inp:focus, .sel:focus { border-color:var(--green); background:#fff; }
+.inp-error { border-color:var(--red) !important; box-shadow:0 0 0 3px rgba(239,68,68,.18) !important; animation:shake .4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
 /* ── WIN RULES ── */
 .wr-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
@@ -951,7 +953,7 @@ function stopTimer() {
 //  ✏️  ĐỔI URL GAS: chỉ cần sửa dòng này
 //  Sau khi sửa → lưu file → mở lại app là có hiệu lực
 // ═══════════════════════════════════════════════════════
-const _EMBEDDED_GS_URL = 'https://script.google.com/macros/s/AKfycbxF_BWUbC_-MTLAc51WLCd_fPRCnXAfFzgENojagmX3FbqvjTIy4_sXwFzl2c6-HHC4/exec';
+const _EMBEDDED_GS_URL = 'https://script.google.com/macros/s/AKfycbxF_BWUbC_-M5HHgJXQMFzKWJJSOF-G1dkmYXsylLjlUk3gWLuOOLi2eW-S0Z5nf4c/exec';
 
 // Ưu tiên: URL nhúng sẵn > localStorage (đề phòng người dùng nhập tay)
 let GS_URL = _EMBEDDED_GS_URL || localStorage.getItem('pb_gs_url6') || '';
@@ -1695,6 +1697,32 @@ function logToGS(eventType, note) {
 function saveResult() {
   if (!S.currentMatch) { toast('⚠️ Chưa chọn trận!'); return; }
   if (S.a === 0 && S.b === 0) { toast('⚠️ Tỉ số 0–0!'); return; }
+
+  // Kiểm tra bắt buộc nhập tên trọng tài
+  const refInp = document.getElementById('inp-referee');
+  const refVal = (refInp?.value || '').trim();
+  if (!refVal) {
+    // Mở card Cài đặt nếu đang thu gọn
+    const settingsCard = refInp?.closest('.card');
+    if (settingsCard) {
+      const hd = settingsCard.querySelector('.card-hd');
+      const bd = settingsCard.querySelector('.card-body');
+      if (hd && !hd.classList.contains('open')) {
+        hd.classList.add('open');
+        if (bd) bd.classList.add('open');
+      }
+    }
+    // Cuộn đến ô trọng tài và focus
+    refInp?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      refInp?.focus();
+      refInp?.classList.add('inp-error');
+      setTimeout(() => refInp?.classList.remove('inp-error'), 2500);
+    }, 400);
+    // Hiện toast
+    toast('⚠️ Vui lòng nhập tên Trọng tài trước khi lưu!', 3500);
+    return;
+  }
 
   const m         = S.currentMatch;
   const origSideA = m.origSideA || 'a';
