@@ -1,0 +1,252 @@
+// ═══════════════════════════════════════════════════════════════
+//  PICKLEBALL REFEREE – Google Apps Script (GAS)
+//  Dán toàn bộ code này vào Apps Script, thay SPREADSHEET_ID
+// ═══════════════════════════════════════════════════════════════
+
+const SS_ID = '15Z0Wup6bmh9TWZkmzyaCD3bFtGkg7kUs4KWH6QGTUBI'; // ← Thay bằng ID của Google Sheet bạn
+
+// ── Tên các sheet ──
+const SH_MATCHES   = 'Matches';    // Danh sách trận
+const SH_RESULTS   = 'KetQua';     // Kết quả trận đấu
+const SH_EVENTS    = 'EventLog';   // Nhật ký sự kiện
+const SH_LIVE      = 'LiveScore';  // Điểm realtime
+
+// ── Header mỗi sheet ──
+const HDR_MATCHES = ['Nội dung','Bảng','Mã trận','Đội A','Điểm A','Điểm B','Đội B','Ghi chú'];
+const HDR_RESULTS = ['Thời gian','Nội dung','Bảng','Mã trận','Đội A','Đội B',
+                     'Điểm A','Điểm B','Thắng','Sân','Trọng tài','Quy tắc'];
+const HDR_EVENTS  = ['Timestamp','Thời gian','Nội dung','Bảng','Mã trận','Đội A','(+1) Đội A','Tỉ số','(+1) Đội B','Đội B','Game','Quy tắc','Sân','Sự kiện','Đội Thắng','Trọng tài'];
+const HDR_LIVE    = ['Mã trận','Đội A','Điểm A','Điểm B','Đội B',
+                     'Giao bóng','Game','Cập nhật lúc'];
+
+// ════════════════════════════════════════════════════════════════
+//  doGet – Đọc dữ liệu (tải trận, kết quả, live score)
+// ════════════════════════════════════════════════════════════════
+function doGet(e) {
+  try {
+    const ss     = SpreadsheetApp.openById(SS_ID);
+    const action = e.parameter.action || 'matches';
+
+    if (action === 'matches') {
+      // Trả về toàn bộ danh sách trận
+      const sh   = getOrCreateSheet(ss, SH_MATCHES, HDR_MATCHES);
+      const rows = sh.getDataRange().getValues();
+      return jsonOk({ rows });
+    }
+
+    if (action === 'results') {
+      // Trả về kết quả đã lưu
+      const sh   = getOrCreateSheet(ss, SH_RESULTS, HDR_RESULTS);
+      const rows = sh.getDataRange().getValues();
+      return jsonOk({ rows });
+    }
+
+    if (action === 'live') {
+      // Trả về điểm live của 1 trận
+      const code = e.parameter.code || '';
+      const sh   = getOrCreateSheet(ss, SH_LIVE, HDR_LIVE);
+      const rows = sh.getDataRange().getValues();
+      const row  = rows.find(r => r[0] === code);
+      return jsonOk({ row: row || null });
+    }
+
+    if (action === 'all') {
+      // Trả về tất cả: matches + results + live
+      const mSh  = getOrCreateSheet(ss, SH_MATCHES, HDR_MATCHES);
+      const rSh  = getOrCreateSheet(ss, SH_RESULTS, HDR_RESULTS);
+      const lSh  = getOrCreateSheet(ss, SH_LIVE, HDR_LIVE);
+      return jsonOk({
+        matches: mSh.getDataRange().getValues(),
+        results: rSh.getDataRange().getValues(),
+        live:    lSh.getDataRange().getValues(),
+      });
+    }
+
+    return jsonOk({ error: 'Unknown action: ' + action });
+
+  } catch (err) {
+    return jsonErr(err.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  doPost – Ghi dữ liệu (kết quả, events, live score)
+// ════════════════════════════════════════════════════════════════
+function doPost(e) {
+  try {
+    const ss   = SpreadsheetApp.openById(SS_ID);
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+
+    // ── Lưu kết quả trận ──
+    if (action === 'append') {
+      // Ghi vào sheet KetQua
+      const rSh = getOrCreateSheet(ss, SH_RESULTS, HDR_RESULTS);
+      rSh.appendRow(data.row);
+
+      // Cột mới của KetQua: savedAt(0), noidung(1), bang(2), code(3), teamA(4), teamB(5), scoreA(6), scoreB(7), winner(8)...
+      const matchCode = String(data.row[3] || '').trim();
+      const scoreA    = data.row[6];
+      const scoreB    = data.row[7];
+
+      // Cập nhật Điểm A (cột 5 = index 4) và Điểm B (cột 6 = index 5) vào sheet Matches
+      // Header Matches: Nội dung(1), Bảng(2), Mã trận(3), Đội A(4), Điểm A(5), Điểm B(6), Đội B(7), Ghi chú(8)
+      if (matchCode) {
+        updateMatchScore(ss, matchCode, scoreA, scoreB);
+      }
+
+      // Xoá live score
+      clearLive(ss, matchCode);
+      return jsonOk({ saved: true });
+    }
+
+    // ── Ghi nhật ký sự kiện ──
+    if (action === 'log') {
+      const sh = getOrCreateSheet(ss, SH_EVENTS, HDR_EVENTS);
+      // data.row đã có [nowMs, now, noidung, bang, ...] từ app
+      sh.appendRow(data.row);
+      // Sort theo cột A (ISO timestamp có ms) để đảm bảo thứ tự đúng dù request đến trễ
+      const lastRow = sh.getLastRow();
+      if (lastRow > 2) {
+        sh.getRange(2, 1, lastRow - 1, sh.getLastColumn())
+          .sort({ column: 1, ascending: true });
+      }
+      return jsonOk({ logged: true });
+    }
+
+    // ── Cập nhật live score realtime ──
+    if (action === 'live') {
+      const sh   = getOrCreateSheet(ss, SH_LIVE, HDR_LIVE);
+      const rows = sh.getDataRange().getValues();
+      const code = data.row[0]; // Mã trận ở vị trí 0
+      let found  = false;
+
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i][0] === code) {
+          // Cập nhật dòng đã có
+          const range = sh.getRange(i + 1, 1, 1, data.row.length);
+          range.setValues([data.row]);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        sh.appendRow(data.row);
+      }
+      return jsonOk({ updated: true });
+    }
+
+    // ── Thêm trận vào Matches (từ app) ──
+    if (action === 'addMatch') {
+      const sh   = getOrCreateSheet(ss, SH_MATCHES, HDR_MATCHES);
+      const rows = sh.getDataRange().getValues();
+      const key  = `${data.row[0]}|${data.row[1]}|${data.row[2]}`;
+      // Tránh trùng
+      const dup = rows.slice(1).find(r => `${r[0]}|${r[1]}|${r[2]}` === key);
+      if (!dup) sh.appendRow(data.row);
+      return jsonOk({ added: !dup });
+    }
+
+    return jsonOk({ error: 'Unknown action: ' + action });
+
+  } catch (err) {
+    return jsonErr(err.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════════════════
+
+function getOrCreateSheet(ss, name, headers) {
+  let sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(headers);
+    // Format header row
+    const hdr = sh.getRange(1, 1, 1, headers.length);
+    hdr.setFontWeight('bold');
+    hdr.setBackground('#16a34a');
+    hdr.setFontColor('#ffffff');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+// Cập nhật Điểm A, Điểm B vào sheet Matches sau khi có kết quả
+// Header Matches: Nội dung(A=1), Bảng(B=2), Mã trận(C=3), Đội A(D=4), Điểm A(E=5), Điểm B(F=6), Đội B(G=7), Ghi chú(H=8)
+function updateMatchScore(ss, matchCode, scoreA, scoreB) {
+  try {
+    const sh   = ss.getSheetByName(SH_MATCHES);
+    if (!sh) return;
+    const rows = sh.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][2]).trim() === matchCode) { // cột C = index 2 = Mã trận
+        sh.getRange(i + 1, 5).setValue(scoreA); // cột E = Điểm A
+        sh.getRange(i + 1, 6).setValue(scoreB); // cột F = Điểm B
+        break;
+      }
+    }
+  } catch(e) {
+    Logger.log('updateMatchScore error: ' + e.message);
+  }
+}
+
+function clearLive(ss, matchCode) {
+  try {
+    const sh   = ss.getSheetByName(SH_LIVE);
+    if (!sh) return;
+    const rows = sh.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === matchCode) {
+        sh.deleteRow(i + 1);
+        break;
+      }
+    }
+  } catch(e) {}
+}
+
+function jsonOk(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, ...obj }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function jsonErr(msg) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: false, error: msg }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SETUP – Tạo sẵn dữ liệu mẫu (chạy 1 lần thủ công)
+// ════════════════════════════════════════════════════════════════
+function setupSampleData() {
+  const ss = SpreadsheetApp.openById(SS_ID);
+
+  // Tạo tất cả sheet với header
+  getOrCreateSheet(ss, SH_MATCHES, HDR_MATCHES);
+  getOrCreateSheet(ss, SH_RESULTS, HDR_RESULTS);
+  getOrCreateSheet(ss, SH_EVENTS,  HDR_EVENTS);
+  getOrCreateSheet(ss, SH_LIVE,    HDR_LIVE);
+
+  // Thêm dữ liệu mẫu vào Matches
+  // Header: Nội dung, Bảng, Mã trận, Đội A, Điểm A, Điểm B, Đội B, Ghi chú
+  const mSh = ss.getSheetByName(SH_MATCHES);
+  if (mSh.getLastRow() <= 1) {
+    const samples = [
+      ['Đôi Nam 5.4', 'Bảng A', 'A1', 'Nguyễn Văn A - Trần Văn B', '', '', 'Lê Văn C - Phạm Văn D', ''],
+      ['Đôi Nam 5.4', 'Bảng A', 'A2', 'Hoàng Văn E - Vũ Văn F',   '', '', 'Đặng Văn G - Bùi Văn H', ''],
+      ['Đôi Nữ 5.4',  'Bảng B', 'B1', 'Nguyễn Thị X - Trần Thị Y', '', '', 'Lê Thị Z - Phạm Thị W', ''],
+    ];
+    samples.forEach(r => mSh.appendRow(r));
+  }
+
+  // Auto-resize columns
+  [SH_MATCHES, SH_RESULTS, SH_EVENTS, SH_LIVE].forEach(name => {
+    const sh = ss.getSheetByName(name);
+    if (sh) sh.autoResizeColumns(1, sh.getLastColumn());
+  });
+
+  Logger.log('✅ Setup hoàn tất! Các sheet đã được tạo với dữ liệu mẫu.');
+}
