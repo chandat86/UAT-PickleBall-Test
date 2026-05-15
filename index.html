@@ -271,11 +271,11 @@ select, input { font-family: inherit; }
 
 <!-- ── GOOGLE SHEETS – KẾT NỐI ĐẦU TIÊN ── -->
 <div class="card" id="gs-card">
-  <div class="card-hd open" onclick="toggle(this)">
+  <div class="card-hd" onclick="toggle(this)">
     <div class="card-hd-left">🔗 Google Sheets <span class="badge" id="gs-badge">Chưa kết nối</span></div>
     <span class="chevron">▾</span>
   </div>
-  <div class="card-body open">
+  <div class="card-body">
     <div id="gs-no-url-hint" style="display:none;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:8px;padding:9px 12px;font-size:12px;color:#92400e;margin-bottom:8px;line-height:1.55">
       👆 <strong>Bước đầu tiên:</strong> Dán URL Apps Script vào đây và nhấn 💾 Lưu để kết nối với Google Sheet của bạn.
     </div>
@@ -302,11 +302,11 @@ select, input { font-family: inherit; }
 
 <!-- ── CÀI ĐẶT TRẬN ── -->
 <div class="card">
-  <div class="card-hd open" onclick="toggle(this)">
+  <div class="card-hd" onclick="toggle(this)">
     <div class="card-hd-left">⚙️ Cài đặt trận đấu</div>
     <span class="chevron">▾</span>
   </div>
-  <div class="card-body open">
+  <div class="card-body">
     <div class="field-grid">
       <div>
         <div class="flabel">Nội dung thi đấu</div>
@@ -369,11 +369,11 @@ select, input { font-family: inherit; }
 
 <!-- ── QUY TẮC ĐIỂM ── -->
 <div class="card">
-  <div class="card-hd open" onclick="toggle(this)">
+  <div class="card-hd" onclick="toggle(this)">
     <div class="card-hd-left">🏆 Quy tắc điểm thắng <span class="badge" id="rule-badge">Chạm 11</span></div>
     <span class="chevron">▾</span>
   </div>
-  <div class="card-body open">
+  <div class="card-body">
     <div class="wr-grid">
       <button class="wr-btn active" data-rule="11"      onclick="setRule('11')">
         <span class="ws">11</span>Chạm 11
@@ -916,9 +916,23 @@ function initGsUrl() {
   const inp = document.getElementById('gs-url');
   if (GS_URL) inp.value = GS_URL;
   updateGsBadge();
-  // Hiện hint vàng nếu chưa nhập URL
   const hint = document.getElementById('gs-no-url-hint');
   if (hint) hint.style.display = GS_URL ? 'none' : 'block';
+  // Tự mở GS card nếu chưa kết nối, thu gọn nếu đã kết nối
+  const gsCard = document.getElementById('gs-card');
+  if (gsCard) {
+    const hd = gsCard.querySelector('.card-hd');
+    const bd = gsCard.querySelector('.card-body');
+    if (!GS_URL) {
+      // Chưa có URL → mở ra để hướng dẫn
+      if (hd) hd.classList.add('open');
+      if (bd) bd.classList.add('open');
+    } else {
+      // Đã có URL → thu gọn
+      if (hd) hd.classList.remove('open');
+      if (bd) bd.classList.remove('open');
+    }
+  }
 }
 
 function saveGsUrl() {
