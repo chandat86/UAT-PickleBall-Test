@@ -279,26 +279,39 @@ select, input { font-family: inherit; }
     <span class="chevron">▾</span>
   </div>
   <div class="card-body">
-    <div id="gs-no-url-hint" style="display:none;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:8px;padding:9px 12px;font-size:12px;color:#92400e;margin-bottom:8px;line-height:1.55">
-      👆 <strong>Bước đầu tiên:</strong> Dán URL Apps Script vào đây và nhấn 💾 Lưu để kết nối với Google Sheet của bạn.
+    <!-- Trạng thái kết nối + nút chính -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="gsbtn save" onclick="pushMatchToGS()" style="flex:1;background:var(--blue)">⬆ Đẩy trận lên GSheet</button>
+      <button class="gsbtn test" onclick="testGs()" style="flex:0 0 auto">🔌 Test</button>
+      <button class="gsbtn test" onclick="debugMatches()" style="flex:0 0 auto;background:#8b5cf6">🔍 Debug</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div>
-        <div class="flabel">Nhập URL GAS</div>
+
+    <!-- URL GAS: ẩn mờ, chỉ dùng khi cần đổi -->
+    <details id="gs-url-details" style="margin-top:4px">
+      <summary style="font-size:11px;color:var(--g400);cursor:pointer;user-select:none;padding:4px 0">
+        ⚙️ Đổi URL GAS (nâng cao)
+      </summary>
+      <div style="margin-top:8px;background:var(--g50);border-radius:10px;padding:10px 12px">
+        <div style="font-size:10.5px;color:var(--g500);margin-bottom:6px;line-height:1.5">
+          URL hiện tại đã được nhúng sẵn trong file HTML.<br>
+          Để đổi: sửa biến <code style="background:var(--g100);padding:1px 4px;border-radius:4px">_EMBEDDED_GS_URL</code> trong file HTML hoặc nhập URL mới bên dưới.
+        </div>
         <div class="gs-row">
-          <input class="inp" id="gs-url" placeholder="https://script.google.com/macros/s/…/exec">
-          <button class="gsbtn save" onclick="saveGsUrl()">💾 Lưu</button>
-          <button class="gsbtn test" onclick="testGs()">🔌 Test</button>
+          <input class="inp" id="gs-url" placeholder="https://script.google.com/macros/s/…/exec"
+            style="font-size:11px;color:var(--g500);opacity:.8">
+          <button class="gsbtn save" onclick="saveGsUrl()" style="white-space:nowrap">💾 Lưu</button>
+        </div>
+        <div style="font-size:10px;color:var(--g400);margin-top:6px">
+          💡 Sau khi Lưu, app sẽ dùng URL mới cho đến khi reload. Để cố định vĩnh viễn: sửa <code>_EMBEDDED_GS_URL</code> trong file HTML.
         </div>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="gsbtn save" onclick="pushMatchToGS()" style="flex:1;background:var(--blue)">⬆ Đẩy trận lên GSheet</button>
-        <button class="gsbtn test" onclick="debugMatches()" style="flex:1;background:#8b5cf6">🔍 Kiểm tra dữ liệu</button>
-      </div>
-      <div style="background:var(--g50);border-radius:8px;padding:7px 10px;font-size:11px;color:var(--g500);line-height:1.6">
-        ✅ Tự tải khi mở app &nbsp;|&nbsp; ✅ Live score realtime &nbsp;|&nbsp; ✅ Lưu kết quả & sự kiện lên GSheets
-      </div>
+    </details>
+
+    <div style="margin-top:8px;background:var(--g50);border-radius:8px;padding:6px 10px;font-size:10.5px;color:var(--g500);line-height:1.6">
+      ✅ Tự tải khi mở &nbsp;|&nbsp; ✅ Auto-poll 5s &nbsp;|&nbsp; ✅ Lưu kết quả realtime
     </div>
+    <!-- Hidden input giữ nguyên để các function JS dùng -->
+    <input type="hidden" id="gs-no-url-hint">
   </div>
 </div>
 
@@ -934,7 +947,15 @@ function stopTimer() {
 // ══════════════════════════════════════════
 //  GOOGLE SHEETS – Đầy đủ realtime
 // ══════════════════════════════════════════
-let GS_URL = localStorage.getItem('pb_gs_url6') || '';
+// ═══════════════════════════════════════════════════════
+//  ✏️  ĐỔI URL GAS: chỉ cần sửa dòng này
+//  Sau khi sửa → lưu file → mở lại app là có hiệu lực
+// ═══════════════════════════════════════════════════════
+const _EMBEDDED_GS_URL = 'https://script.google.com/macros/s/AKfycbxF_BWUbC_-M5HHgJXQMFzKWJJSOF-G1dkmYXsylLjlUk3gWLuOOLi2eW-S0Z5nf4c/exec';
+
+// Ưu tiên: URL nhúng sẵn > localStorage (đề phòng người dùng nhập tay)
+let GS_URL = _EMBEDDED_GS_URL || localStorage.getItem('pb_gs_url6') || '';
+if (_EMBEDDED_GS_URL) localStorage.setItem('pb_gs_url6', _EMBEDDED_GS_URL); // đồng bộ
 
 function initGsUrl() {
   const inp = document.getElementById('gs-url');
