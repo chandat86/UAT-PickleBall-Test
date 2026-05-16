@@ -7,3 +7,6 @@ Cách 2 — Tạm thời: Trong app → mở GS card → click ⚙️ Đổi URL
 -------Update UAT-Pickleball-V2 ------------
 - Thêm BXH
 - Chỉnh lại ô chọn trận đấu.
+---- v2.1 ------
+  - Update BXH lay ket qua tu GGSheet
+  - 
