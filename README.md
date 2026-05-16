@@ -12,4 +12,18 @@ Cách 2 — Tạm thời: Trong app → mở GS card → click ⚙️ Đổi URL
   - 
 
 --- Version v2.3 ----
-- Update BXH: không ghi thêm dữ liệu kết quả 2 lần, ghi đè lên update. 
+- Update BXH: không ghi thêm dữ liệu kết quả 2 lần, ghi đè lên update.
+
+- --- version v2.4 ---
+#Yêu cầu Thay đổi
+1 Poll 10s thay vì 5s   ---> POLL_FOCUSED=10000, POLL_BACKGROUND=60000
+2 Tải trận realtime + phát hiện thay đổi tỉ số   ----> Poll cũng so sánh matchScoreA/B để cập nhật tỉ số live
+3 Trạng thái trận: Chưa/Đang/Hoàn thành  --->  ⬜ Chưa thi đấu · 🟠 Đang thi đấu · ✅ Hoàn thành
+4 Badge chỉ hiện số trận bảng đó  ---> Bỏ /tổng
+5 Ẩn danh sách khi chưa chọn nội dung/bảng  --> Hiện hướng dẫn và tổng số trận
+6 Bỏ Game Tiếp, thêm Bắt đầu   ----> Thứ tự: Bắt đầu · Undo · Lưu · Reset
+  7 Chưa Bắt đầu → không nhập điểm được  ---> not-started class disable sc-btn
+  8 Nút xóa kết quả localclear   --->  Results() — chỉ xóa local, không xóa GSheets
+  9 Quy tắc vào Cài đặt dạng dropdown   ---> + thêm Chạm 21, Chạm 25
+  10 Danh sách trận tự thu gọn  ---> Chỉ hiện khi chọn đủ Nội dung + Bảng
+  11 Nút GSheet đã được chuyển vào card GS, nằm sau nút "🔄 Tải trận + kết quả". Header giờ chỉ còn logo + tên app, gọn hơn.
