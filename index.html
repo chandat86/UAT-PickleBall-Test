@@ -106,15 +106,19 @@ select, input { font-family: inherit; }
 .sm-btn.clr { background:var(--red-bg); color:var(--red); border:1.5px solid #fecaca; }
 
 /* ── SWAP NOTICE ── */
+/* ── SWAP NOTICE — toast góc dưới, không che layout ── */
 .swap-notice {
-  display:none; background:linear-gradient(90deg,#16a34a,#22c55e);
-  border-radius:10px; padding:10px 14px; text-align:center;
-  font-family:'Oswald',sans-serif; font-size:16px; font-weight:700;
-  color:#fff; animation:pop .3s ease; letter-spacing:.3px;
+  display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+  z-index:9999; white-space:nowrap;
+  background:linear-gradient(90deg,#16a34a,#22c55e);
+  border-radius:24px; padding:10px 20px; text-align:center;
+  font-family:'Oswald',sans-serif; font-size:15px; font-weight:700;
+  color:#fff; box-shadow:0 6px 24px rgba(0,0,0,.28);
+  animation:pop .25s ease;
 }
 .swap-notice.show { display:block; }
 
-/* ── WIN BANNER ── */
+/* ── WIN BANNER — trong layout, trên scoreboard, tự ẩn ── */
 .win-banner { display:none; background:linear-gradient(90deg,#fbbf24,#f59e0b); border-radius:var(--r); padding:11px 16px; text-align:center; box-shadow:var(--sh); animation:pop .3s ease; }
 .win-banner.show { display:block; }
 .win-txt { font-family:'Oswald',sans-serif; font-size:19px; font-weight:700; color:#1a1a1a; }
@@ -163,6 +167,7 @@ select, input { font-family: inherit; }
 .ctrl-btn.reset { background:var(--red-bg); color:var(--red); }
 .ctrl-btn.start { background:var(--green); color:#fff; font-weight:700; }
 .ctrl-btn.start.started { background:#e0f2fe; color:#0369a1; }
+.ctrl-btn.start.done-btn { background:#f0fdf4; color:#16a34a; font-weight:700; }
 /* Score buttons disabled khi chưa bắt đầu */
 .scoreboard.not-started .sc-btn { opacity:.35; pointer-events:none; }
 .scoreboard.not-started .ex-btn { opacity:.35; pointer-events:none; }
@@ -1373,7 +1378,7 @@ function saveMatchList() { localStorage.setItem('pb_ml6',JSON.stringify(matchLis
 function clearResults() {
   const count = Object.keys(S.results).length;
   if (!count) { toast('⚠️ Chưa có kết quả để xóa!'); return; }
-  if (!confirm(`Xóa ${count} kết quả đã lưu trên máy này?\n(Không xóa trên Google Sheets)`)) return;
+  if (!confirm(`Xóa ${count} kết quả đã lưu trên máy này?`)) return;
   S.results = {};
   try { localStorage.removeItem('pb_res6'); } catch(e) {}
   renderResults();
@@ -1505,43 +1510,51 @@ function checkWin() {
       : (S.currentMatch?sn(S.currentMatch.teamB):'Đội B');
     document.getElementById('win-txt').textContent = `🏆 ${wn} THẮNG! ${S.a} – ${S.b}`;
     banner.classList.add('show');
+    // Trận đã lưu/hoàn thành → cố định không tự ẩn
+    const isDone = S.currentMatch && S.results[S.currentMatch.key];
+    clearTimeout(banner._hideTimer);
+    if (!isDone) {
+      // Đang chấm → tự ẩn sau 6s, reset mỗi lần điểm thay đổi
+      banner._hideTimer = setTimeout(() => banner.classList.remove('show'), 6000);
+    }
   } else {
+    clearTimeout(banner._hideTimer);
     banner.classList.remove('show');
   }
 }
 
 // Auto swap court — đổi sân khi 1 trong 2 đội đạt ngưỡng điểm
 function checkAutoSwap() {
+  // Không trigger khi trận đã hoàn thành hoặc chưa bắt đầu
+  if (!matchStarted) return;
+  const isDone = S.currentMatch && S.results[S.currentMatch.key];
+  if (isDone) return;
   const swapAt = RULES[winRule].swap;
-  const hi     = Math.max(S.a, S.b); // đội dẫn điểm cao hơn
+  const hi     = Math.max(S.a, S.b);
   const notice = document.getElementById('swap-notice');
 
-  // Trigger khi 1 đội đạt đúng ngưỡng (chỉ 1 lần/game)
   if (!swapNotified && hi >= swapAt) {
     swapNotified = true;
 
-    // Thực sự đổi vị trí: hoán đổi điểm + tên + server
     [S.a, S.b] = [S.b, S.a];
     S.server = S.server === 'a' ? 'b' : 'a';
     if (S.currentMatch) {
       [S.currentMatch.teamA, S.currentMatch.teamB] = [S.currentMatch.teamB, S.currentMatch.teamA];
-      // Theo dõi vị trí đội gốc
       S.currentMatch.origSideA = S.currentMatch.origSideA === 'a' ? 'b' : 'a';
       document.getElementById('name-a').textContent = S.currentMatch.teamA;
       document.getElementById('name-b').textContent = S.currentMatch.teamB;
     }
 
-    // Cập nhật điểm hiển thị ngay
     document.getElementById('score-a').textContent = S.a;
     document.getElementById('score-b').textContent = S.b;
 
-    // Hiển thị banner + rung
+    // Toast nhỏ ở góc + rung — không che layout
     notice.classList.add('show');
     navigator.vibrate && navigator.vibrate([300, 100, 300, 100, 300]);
-    setTimeout(() => notice.classList.remove('show'), 6000);
+    clearTimeout(notice._hideTimer);
+    notice._hideTimer = setTimeout(() => notice.classList.remove('show'), 4000);
 
     pushLog(`⇄ TỰ ĐỘNG ĐỔI SÂN (${swapAt} điểm)`, null);
-    toast(`⇄ Đã tự động ĐỔI SÂN khi chạm ${swapAt} điểm!`);
   }
 }
 
@@ -1775,23 +1788,27 @@ function startMatch() {
   if (!S.currentMatch) { toast('⚠️ Chưa chọn trận!'); return; }
   matchStarted = true;
   const btn = document.getElementById('btn-start');
-  if (btn) { btn.textContent = '🟢 Đang đấu'; btn.classList.add('started'); }
+  if (btn) { btn.textContent = '🟢 Đang thi đấu'; btn.classList.add('started'); }
   document.querySelector('.scoreboard')?.classList.remove('not-started');
   pushLog('▶ Bắt đầu trận', null);
   logToGS('▶ Bắt đầu trận', '');
   toast('▶ Trận đấu bắt đầu!');
-  renderMatchGrid(); // cập nhật trạng thái trận
+  renderMatchGrid();
 }
 
-function _setMatchStarted(started) {
+function _setMatchStarted(started, done) {
   matchStarted = started;
   const btn = document.getElementById('btn-start');
   const sb  = document.querySelector('.scoreboard');
-  if (started) {
-    if (btn) { btn.textContent = '🟢 Đang đấu'; btn.classList.add('started'); }
+  if (done) {
+    // Đã lưu xong → Hoàn thành
+    if (btn) { btn.textContent = '✅ Hoàn thành'; btn.classList.remove('started'); btn.classList.add('done-btn'); }
+    sb?.classList.add('not-started');
+  } else if (started) {
+    if (btn) { btn.textContent = '🟢 Đang thi đấu'; btn.classList.add('started'); btn.classList.remove('done-btn'); }
     sb?.classList.remove('not-started');
   } else {
-    if (btn) { btn.textContent = '▶ Bắt đầu'; btn.classList.remove('started'); }
+    if (btn) { btn.textContent = '▶ Bắt đầu'; btn.classList.remove('started'); btn.classList.remove('done-btn'); }
     sb?.classList.add('not-started');
   }
 }
@@ -1840,7 +1857,7 @@ function resetMatch() {
   swapNotified=false;
   document.getElementById('swap-notice').classList.remove('show');
   pushLog('↺ Reset',null);
-  _setMatchStarted(false);
+  _setMatchStarted(false, false);
   render();
 }
 
@@ -2018,7 +2035,7 @@ function confirmSave() {
   toast(`💾 Đã lưu: ${m.code} · ${scoreOrig_A}–${scoreOrig_B} · ${winnerLabel}`, 4000);
 
   // Reset trạng thái bắt đầu (trận đã hoàn thành)
-  _setMatchStarted(false);
+  _setMatchStarted(false, true); // true = done → hiện "Hoàn thành"
 
   // 5. Sync GSheets hoàn toàn ngầm
   if (GS_URL) {
@@ -2058,12 +2075,19 @@ function loadMatch(idx) {
   }
   S.game=1; S.server='a'; S.serveNum=1; S.history=[];
   swapNotified=false;
-  document.getElementById('swap-notice').classList.remove('show');
+  // Luôn ẩn swap-notice khi chọn trận
+  const snotice = document.getElementById('swap-notice');
+  clearTimeout(snotice?._hideTimer);
+  if (snotice) snotice.classList.remove('show');
+  // Win-banner: nếu trận đã hoàn thành thì render() sẽ tự show cố định
+  const banner = document.getElementById('win-banner');
+  if (banner) { clearTimeout(banner._hideTimer); banner.classList.remove('show'); }
   document.getElementById('name-a').textContent=m.teamA;
   document.getElementById('name-b').textContent=m.teamB;
   document.getElementById('mi-tag').textContent=`${m.code}\n${m.noidung}`;
   pushLog(`📋 Mở: ${m.code}`,null);
-  _setMatchStarted(false); // reset Bắt đầu khi chọn trận mới
+  // Nếu trận đã hoàn thành → nút "Hoàn thành", ngược lại → "Bắt đầu"
+  _setMatchStarted(false, matchHasScore);
   render(); renderMatchGrid();
   toast(`📋 ${m.code}: ${sn(m.teamA)} vs ${sn(m.teamB)}`);
 }
@@ -2703,7 +2727,7 @@ initGsUrl();
 if (matchList.length) syncDropdownsFromData(false);
 renderMatchGrid();
 render();
-_setMatchStarted(false); // bắt đầu ở trạng thái chưa started
+_setMatchStarted(false, false); // bắt đầu ở trạng thái chưa started
 renderHistory();
 renderResults();
 syncBXHDropdowns();
