@@ -97,6 +97,7 @@ select, input { font-family: inherit; }
 .match-btn:hover { border-color:var(--green); background:var(--green-bg); }
 .match-btn.active { border-color:var(--green); background:var(--green-bg); font-weight:600; }
 .match-btn.done { border-color:var(--blue-bd); background:var(--blue-bg); }
+.match-btn.live { border-color:#ea580c!important; background:#fff7ed!important; }
 .mc { font-family:'Oswald',sans-serif; font-size:12.5px; color:var(--green-dk); font-weight:700; display:block; margin-bottom:1px; }
 .ms-tag { display:inline-block; margin-top:2px; font-family:'Oswald',sans-serif; font-size:10.5px; font-weight:700; color:var(--blue); background:var(--blue-bd); border-radius:4px; padding:1px 5px; }
 .match-bar { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
@@ -160,6 +161,11 @@ select, input { font-family: inherit; }
 .ctrl-btn.next  { background:var(--green-bg); color:var(--green-dk); }
 .ctrl-btn.save  { background:var(--green); color:#fff; }
 .ctrl-btn.reset { background:var(--red-bg); color:var(--red); }
+.ctrl-btn.start { background:var(--green); color:#fff; font-weight:700; }
+.ctrl-btn.start.started { background:#e0f2fe; color:#0369a1; }
+/* Score buttons disabled khi chưa bắt đầu */
+.scoreboard.not-started .sc-btn { opacity:.35; pointer-events:none; }
+.scoreboard.not-started .ex-btn { opacity:.35; pointer-events:none; }
 
 /* ── HISTORY ── */
 .history-list { max-height:175px; overflow-y:auto; }
@@ -292,7 +298,6 @@ select, input { font-family: inherit; }
   </div>
 </div>
   <div class="hdr-right">
-    <div class="gs-pill"><div class="gs-dot" id="gs-dot"></div><span id="gs-txt">GSheets</span></div>
     <button class="btn-csv" onclick="exportCSV()" style="display:none">⬇ CSV</button>
   </div>
 </div>
@@ -300,9 +305,10 @@ select, input { font-family: inherit; }
 <!-- ── GOOGLE SHEETS – KẾT NỐI ĐẦU TIÊN ── -->
 <div class="card" id="gs-card">
   <div class="card-hd" onclick="toggle(this)">
-    <div class="card-hd-left" style="display:flex;align-items:center;gap:8px;flex:1">
+    <div class="card-hd-left" style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap">
       🔗 GS <span class="badge" id="gs-badge">Chưa kết nối</span>
-      <button class="gsbtn load" onclick="event.stopPropagation();loadAllFromGS()" style="padding:5px 10px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:8px;margin-left:4px">🔄 Tải trận + kết quả</button>
+      <button class="gsbtn load" onclick="event.stopPropagation();loadAllFromGS()" style="padding:5px 12px;font-size:11.5px;font-weight:700;white-space:nowrap;border-radius:8px">🔄 Tải trận + kết quả</button>
+      <div class="gs-pill" onclick="event.stopPropagation()"><div class="gs-dot" id="gs-dot"></div><span id="gs-txt">GSheets</span></div>
     </div>
     <span class="chevron">▾</span>
   </div>
@@ -413,37 +419,25 @@ select, input { font-family: inherit; }
         <div class="flabel">Trọng tài</div>
         <input class="inp" id="inp-referee" placeholder="Họ tên trọng tài…">
       </div>
+      <div style="grid-column:1/-1">
+        <div class="flabel">🏆 Quy tắc điểm thắng <span class="badge" id="rule-badge" style="margin-left:4px">Chạm 11</span></div>
+        <div class="sel-w">
+          <select class="sel" id="sel-rule" onchange="setRule(this.value)">
+            <option value="11">Chạm 11 – đổi sân tại 6 điểm</option>
+            <option value="11c2m15">Chạm 11, cách 2 max 15 – đổi sân tại 6 điểm</option>
+            <option value="15">Chạm 15 – đổi sân tại 8 điểm</option>
+            <option value="15c2m21">Chạm 15, cách 2 max 21 – đổi sân tại 8 điểm</option>
+            <option value="21">Chạm 21 – đổi sân tại 11 điểm</option>
+            <option value="25">Chạm 25 – đổi sân tại 13 điểm</option>
+          </select>
+        </div>
+        <div class="win-info-box" id="win-info" style="margin-top:6px">Thắng khi chạm <strong>11</strong> điểm. Đến <strong>6 điểm</strong> tự động nhắc đổi sân.</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ── QUY TẮC ĐIỂM ── -->
-<div class="card">
-  <div class="card-hd" onclick="toggle(this)">
-    <div class="card-hd-left">🏆 Quy tắc điểm thắng <span class="badge" id="rule-badge">Chạm 11</span></div>
-    <span class="chevron">▾</span>
-  </div>
-  <div class="card-body">
-    <div class="wr-grid">
-      <button class="wr-btn active" data-rule="11"      onclick="setRule('11')">
-        <span class="ws">11</span>Chạm 11
-      </button>
-      <button class="wr-btn" data-rule="11c2m15" onclick="setRule('11c2m15')">
-        <span class="ws">11 / 15</span>Cách 2, max 15
-      </button>
-      <button class="wr-btn" data-rule="15"      onclick="setRule('15')">
-        <span class="ws">15</span>Chạm 15
-      </button>
-      <button class="wr-btn" data-rule="15c2m21" onclick="setRule('15c2m21')">
-        <span class="ws">15 / 21</span>Cách 2, max 21
-      </button>
-      <button class="wr-btn" data-rule="25"      onclick="setRule('25')">
-        <span class="ws">25</span>Chạm 25
-      </button>
-    </div>
-    <div class="win-info-box" id="win-info">Thắng khi chạm <strong>11</strong> điểm. Đến <strong>6 điểm</strong> tự động nhắc đổi sân.</div>
-  </div>
-</div>
+<!-- ── QUY TẮC ĐIỂM đã chuyển vào Cài đặt trận đấu ── -->
 
 <!-- ── CHỌN TRẬN ── -->
 <div class="card">
@@ -471,7 +465,7 @@ select, input { font-family: inherit; }
 </div>
 
 <!-- ── SCOREBOARD ── -->
-<div class="scoreboard">
+<div class="scoreboard not-started">
   <!-- Đội A -->
   <div class="team-card serving" id="card-a">
     <div class="tgt-tag" id="tgt-a">→11</div>
@@ -519,8 +513,8 @@ select, input { font-family: inherit; }
 
 <!-- ── CONTROLS ── -->
 <div class="ctrl-row">
+  <button class="ctrl-btn start" id="btn-start" onclick="startMatch()">▶ Bắt đầu</button>
   <button class="ctrl-btn undo"  onclick="undo()">↩ Undo</button>
-  <button class="ctrl-btn next"  onclick="nextGame()">▶ Game tiếp</button>
   <button class="ctrl-btn save"  onclick="saveResult()">💾 Lưu</button>
   <button class="ctrl-btn reset" onclick="resetMatch()">↺ Reset</button>
 </div>
@@ -541,11 +535,11 @@ select, input { font-family: inherit; }
 
 <!-- ── KẾT QUẢ ── -->
 <div class="card">
-  <div class="card-hd open" onclick="toggle(this)">
+  <div class="card-hd" onclick="toggle(this)">
     <div class="card-hd-left">🏆 Kết quả đã lưu <span class="badge" id="res-badge">0</span></div>
     <span class="chevron">▾</span>
   </div>
-  <div class="card-body open">
+  <div class="card-body">
     <div class="res-wrap">
       <table class="res-table">
         <thead><tr>
@@ -563,6 +557,9 @@ select, input { font-family: inherit; }
         </tr></thead>
         <tbody id="res-body"><tr><td colspan="7" class="empty-msg">Chưa có kết quả</td></tr></tbody>
       </table>
+    </div>
+    <div class="match-bar" style="margin-top:8px">
+      <button class="sm-btn clr" onclick="clearResults()">🗑 Xóa kết quả</button>
     </div>
   </div>
 </div>
@@ -898,25 +895,30 @@ function toggle(hd) {
 //  WIN RULES
 // ══════════════════════════════════════════
 const RULES = {
-  '11':      {label:'Chạm 11',        base:11,deuce:false,max:11,swap:6},
+  '11':      {label:'Chạm 11',           base:11,deuce:false,max:11,swap:6},
   '11c2m15': {label:'11 cách 2 (max 15)',base:11,deuce:true, max:15,swap:6},
-  '15':      {label:'Chạm 15',        base:15,deuce:false,max:15,swap:8},
+  '15':      {label:'Chạm 15',           base:15,deuce:false,max:15,swap:8},
   '15c2m21': {label:'15 cách 2 (max 21)',base:15,deuce:true, max:21,swap:8},
-  '25':      {label:'Chạm 25',        base:25,deuce:false,max:25,swap:13},
+  '21':      {label:'Chạm 21',           base:21,deuce:false,max:21,swap:11},
+  '25':      {label:'Chạm 25',           base:25,deuce:false,max:25,swap:13},
 };
 const RULE_DESC = {
   '11':      'Thắng khi chạm <strong>11</strong> điểm. Đến <strong>6 điểm</strong> tự động nhắc đổi sân.',
   '11c2m15': 'Thắng khi chạm 11. Hòa 10-10 → cách 2, max <strong>15</strong>. Đến <strong>6 điểm</strong> nhắc đổi sân.',
   '15':      'Thắng khi chạm <strong>15</strong> điểm. Đến <strong>8 điểm</strong> tự động nhắc đổi sân.',
   '15c2m21': 'Thắng khi chạm 15. Hòa 14-14 → cách 2, max <strong>21</strong>. Đến <strong>8 điểm</strong> nhắc đổi sân.',
+  '21':      'Thắng khi chạm <strong>21</strong> điểm. Đến <strong>11 điểm</strong> tự động nhắc đổi sân.',
   '25':      'Thắng khi chạm <strong>25</strong> điểm. Đến <strong>13 điểm</strong> tự động nhắc đổi sân.',
 };
 let winRule = '11';
 let swapNotified = false; // đã thông báo đổi sân game này chưa
 
 function setRule(r) {
+  if (!RULES[r]) r = '11';
   winRule = r;
-  document.querySelectorAll('.wr-btn').forEach(b => b.classList.toggle('active', b.dataset.rule === r));
+  // Sync dropdown trong Cài đặt
+  const sel = document.getElementById('sel-rule');
+  if (sel) sel.value = r;
   document.getElementById('win-info').innerHTML = RULE_DESC[r];
   document.getElementById('rule-badge').textContent = RULES[r].label;
   checkWin();
@@ -1368,6 +1370,17 @@ try { matchList = JSON.parse(localStorage.getItem('pb_ml6')||'[]'); } catch(e){}
 
 function saveMatchList() { localStorage.setItem('pb_ml6',JSON.stringify(matchList)); }
 
+function clearResults() {
+  const count = Object.keys(S.results).length;
+  if (!count) { toast('⚠️ Chưa có kết quả để xóa!'); return; }
+  if (!confirm(`Xóa ${count} kết quả đã lưu trên máy này?\n(Không xóa trên Google Sheets)`)) return;
+  S.results = {};
+  try { localStorage.removeItem('pb_res6'); } catch(e) {}
+  renderResults();
+  renderBXH();
+  toast('🗑 Đã xóa kết quả local');
+}
+
 function clearMatches() {
   if (!confirm('Xoá toàn bộ danh sách trận?')) return;
   matchList=[]; saveMatchList(); renderMatchGrid(); toast('Đã xoá danh sách trận');
@@ -1548,6 +1561,24 @@ function renderMatchGrid() {
     return;
   }
 
+  // Nếu chưa chọn nội dung → ẩn danh sách
+  if (!filterND) {
+    const total = matchList.length;
+    badge.textContent = total;
+    if (title) title.textContent = '📋 Chọn trận đấu';
+    grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;color:var(--g500)">Chọn <strong>Nội dung</strong> để xem danh sách trận (${total} trận)</div>`;
+    return;
+  }
+
+  // Đã chọn nội dung nhưng chưa chọn bảng → hiện tổng số trận nội dung đó
+  const totalND = matchList.filter(m => m.noidung === filterND).length;
+  if (!filterBang) {
+    badge.textContent = totalND;
+    if (title) title.textContent = `📋 ${filterND}`;
+    grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;color:var(--g500)">${filterND}: <strong>${totalND} trận</strong> · Chọn <strong>Bảng</strong> để xem danh sách</div>`;
+    return;
+  }
+
   const filtered = matchList.filter(m => {
     const nd   = (m.noidung || '').trim();
     const bang = (m.bang    || '').trim();
@@ -1555,7 +1586,7 @@ function renderMatchGrid() {
         && (!filterBang || bang === filterBang);
   });
 
-  badge.textContent = filtered.length + (filtered.length < matchList.length ? '/'+matchList.length : '');
+  badge.textContent = filtered.length;
 
   if (title) {
     if (filterND || filterBang) {
@@ -1573,11 +1604,26 @@ function renderMatchGrid() {
 
   grid.innerHTML = '';
   filtered.forEach(m => {
-    const idx  = matchList.indexOf(m);
+    const idx    = matchList.indexOf(m);
     const done   = (m.matchScoreA !== null && m.matchScoreA !== undefined);
     const active = S.currentMatch?.key === m.key;
+    const isLive = active && matchStarted && !done; // đang chấm điểm chưa lưu
     const btn    = document.createElement('button');
-    btn.className = 'match-btn' + (done ? ' done' : '') + (active ? ' active' : '');
+
+    // Trạng thái hiển thị
+    let statusLabel = '', statusStyle = '';
+    if (done) {
+      statusLabel = '✅ Hoàn thành';
+      statusStyle = 'color:#16a34a;font-weight:700;font-size:9px';
+    } else if (isLive) {
+      statusLabel = '🟠 Đang thi đấu';
+      statusStyle = 'color:#ea580c;font-weight:700;font-size:9px';
+    } else {
+      statusLabel = '⬜ Chưa thi đấu';
+      statusStyle = 'color:var(--g400);font-size:9px';
+    }
+
+    btn.className = 'match-btn' + (done ? ' done' : '') + (active ? ' active' : '') + (isLive ? ' live' : '');
     const hasSc = (m.matchScoreA !== null && m.matchScoreA !== undefined &&
                    m.matchScoreB !== null && m.matchScoreB !== undefined);
     const scA = hasSc ? m.matchScoreA : '';
@@ -1590,10 +1636,11 @@ function renderMatchGrid() {
 
     btn.innerHTML =
       // Header: mã trận + nội dung · bảng
-      `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">` +
+      `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">` +
         `<span class="mc" style="margin-bottom:0">${m.code || '?'}</span>` +
-        `<span style="font-size:9.5px;color:var(--g400);text-align:right;line-height:1.2">${m.noidung||''}${m.bang?' · '+m.bang:''}</span>` +
+        `<span style="${statusStyle}">${statusLabel}</span>` +
       `</div>` +
+      `<div style="font-size:9px;color:var(--g400);margin-bottom:4px">${m.noidung||''}${m.bang?' · '+m.bang:''}</div>` +
       // Đội A — tên wrap, điểm cố định bên phải align top
       `<div style="display:flex;align-items:flex-start;gap:4px;margin-bottom:4px">` +
         `<span style="font-size:11px;font-weight:${winA?'700':'500'};color:${winA?'var(--green-dk)':'var(--g700)'};flex:1;min-width:0;line-height:1.35">${sn(m.teamA)}</span>` +
@@ -1624,12 +1671,11 @@ function renderHistory() {
 
 function renderResults() {
   const body = document.getElementById('res-body');
-  // Chỉ hiện kết quả của trận có xác nhận từ sheet Matches (matchScoreA/B != null)
-  // Lọc bỏ kết quả cũ của giải trước không còn trong Matches hoặc chưa có điểm
   const allResults = Object.values(S.results);
   const arr = allResults.filter(r => {
-    const match = matchList.find(m => m.code === r.code);
-    // Giữ nếu trận vẫn trong Matches VÀ Matches đã có điểm xác nhận
+    // Dùng composite key noidung|bang|code để tìm đúng trận
+    const key = `${r.noidung||''}|${r.bang||''}|${r.code||''}`;
+    const match = matchList.find(m => m.key === key);
     return match &&
            match.matchScoreA !== null && match.matchScoreA !== undefined &&
            match.matchScoreB !== null && match.matchScoreB !== undefined;
@@ -1676,6 +1722,7 @@ function sn(name) {
 //  ACTIONS
 // ══════════════════════════════════════════
 function addScore(side, delta) {
+  if (!matchStarted) { toast('⚠️ Nhấn Bắt đầu trước!'); return; }
   const snap=JSON.stringify({a:S.a,b:S.b,server:S.server,serveNum:S.serveNum});
   if (side==='a') S.a=Math.max(0,S.a+delta);
   else S.b=Math.max(0,S.b+delta);
@@ -1722,6 +1769,32 @@ function addScore(side, delta) {
   }
 }
 
+let matchStarted = false; // trọng tài phải bấm Bắt đầu mới nhập điểm được
+
+function startMatch() {
+  if (!S.currentMatch) { toast('⚠️ Chưa chọn trận!'); return; }
+  matchStarted = true;
+  const btn = document.getElementById('btn-start');
+  if (btn) { btn.textContent = '🟢 Đang đấu'; btn.classList.add('started'); }
+  document.querySelector('.scoreboard')?.classList.remove('not-started');
+  pushLog('▶ Bắt đầu trận', null);
+  logToGS('▶ Bắt đầu trận', '');
+  toast('▶ Trận đấu bắt đầu!');
+  renderMatchGrid(); // cập nhật trạng thái trận
+}
+
+function _setMatchStarted(started) {
+  matchStarted = started;
+  const btn = document.getElementById('btn-start');
+  const sb  = document.querySelector('.scoreboard');
+  if (started) {
+    if (btn) { btn.textContent = '🟢 Đang đấu'; btn.classList.add('started'); }
+    sb?.classList.remove('not-started');
+  } else {
+    if (btn) { btn.textContent = '▶ Bắt đầu'; btn.classList.remove('started'); }
+    sb?.classList.add('not-started');
+  }
+}
 function setServe(n) { S.serveNum=n; pushLog(`Giao ${n}`,null); render(); }
 function toggleServe() { S.server=S.server==='a'?'b':'a'; render(); }
 
@@ -1767,6 +1840,7 @@ function resetMatch() {
   swapNotified=false;
   document.getElementById('swap-notice').classList.remove('show');
   pushLog('↺ Reset',null);
+  _setMatchStarted(false);
   render();
 }
 
@@ -1943,6 +2017,9 @@ function confirmSave() {
   const winnerLabel = scoreOrig_A !== scoreOrig_B ? `🏆 ${sn(winner)} thắng` : '🤝 Hoà';
   toast(`💾 Đã lưu: ${m.code} · ${scoreOrig_A}–${scoreOrig_B} · ${winnerLabel}`, 4000);
 
+  // Reset trạng thái bắt đầu (trận đã hoàn thành)
+  _setMatchStarted(false);
+
   // 5. Sync GSheets hoàn toàn ngầm
   if (GS_URL) {
     syncGS('append', [
@@ -1986,6 +2063,7 @@ function loadMatch(idx) {
   document.getElementById('name-b').textContent=m.teamB;
   document.getElementById('mi-tag').textContent=`${m.code}\n${m.noidung}`;
   pushLog(`📋 Mở: ${m.code}`,null);
+  _setMatchStarted(false); // reset Bắt đầu khi chọn trận mới
   render(); renderMatchGrid();
   toast(`📋 ${m.code}: ${sn(m.teamA)} vs ${sn(m.teamB)}`);
 }
@@ -2071,8 +2149,8 @@ let _lastMatchCount = 0;
 let _pollInterval   = null;
 let _appFocused     = !document.hidden;
 
-const POLL_FOCUSED    = 5000;  // 5 giây khi đang dùng app
-const POLL_BACKGROUND = 30000; // 30 giây khi app chạy ngầm
+const POLL_FOCUSED    = 10000; // 10 giây khi đang dùng app
+const POLL_BACKGROUND = 60000; // 60 giây khi app chạy ngầm
 
 function startAutoPoll() {
   stopAutoPoll();
@@ -2113,15 +2191,18 @@ async function pollMatches() {
       newMatches.push({noidung:nd,bang,code,teamA:tA,teamB:tB,matchScoreA:sA,matchScoreB:sB,key:`${nd}|${bang}|${code}`});
     });
 
-    // So sánh thông minh: check cả số lượng VÀ danh sách bảng/nội dung
-    const oldBangs = [...new Set(matchList.map(m=>m.bang).filter(Boolean))].join(',');
-    const newBangs = [...new Set(newMatches.map(m=>m.bang).filter(Boolean))].join(',');
-    const oldNDs   = [...new Set(matchList.map(m=>m.noidung).filter(Boolean))].join(',');
-    const newNDs   = [...new Set(newMatches.map(m=>m.noidung).filter(Boolean))].join(',');
+    // So sánh thông minh: check số lượng, bảng, nội dung VÀ điểm số
+    const oldBangs  = [...new Set(matchList.map(m=>m.bang).filter(Boolean))].join(',');
+    const newBangs  = [...new Set(newMatches.map(m=>m.bang).filter(Boolean))].join(',');
+    const oldNDs    = [...new Set(matchList.map(m=>m.noidung).filter(Boolean))].join(',');
+    const newNDs    = [...new Set(newMatches.map(m=>m.noidung).filter(Boolean))].join(',');
+    const oldScores = matchList.map(m=>`${m.key}:${m.matchScoreA??''}:${m.matchScoreB??''}`).join('|');
+    const newScores = newMatches.map(m=>`${m.key}:${m.matchScoreA??''}:${m.matchScoreB??''}`).join('|');
 
     const hasChange = newCount !== _lastMatchCount
                    || oldBangs !== newBangs
-                   || oldNDs   !== newNDs;
+                   || oldNDs   !== newNDs
+                   || oldScores !== newScores;
 
     if (!hasChange) return; // không có gì thay đổi → bỏ qua
 
@@ -2622,6 +2703,7 @@ initGsUrl();
 if (matchList.length) syncDropdownsFromData(false);
 renderMatchGrid();
 render();
+_setMatchStarted(false); // bắt đầu ở trạng thái chưa started
 renderHistory();
 renderResults();
 syncBXHDropdowns();
