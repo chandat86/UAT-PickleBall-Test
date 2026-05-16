@@ -10,3 +10,6 @@ Cách 2 — Tạm thời: Trong app → mở GS card → click ⚙️ Đổi URL
 ---- v2.1 ------
   - Update BXH lay ket qua tu GGSheet
   - 
+
+--- Version v2.3 ----
+- Update BXH: không ghi thêm dữ liệu kết quả 2 lần, ghi đè lên update. 
