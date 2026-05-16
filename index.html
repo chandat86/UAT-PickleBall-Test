@@ -1353,17 +1353,34 @@ async function testGs() {
 }
 
 // Push live score sau mỗi điểm (realtime)
+// Cache live scores từ GSheets (các máy khác đang chấm)
+// key = noidung|bang|code, value = {scoreA, scoreB, teamA, teamB, updatedAt}
+let liveScores = {};
+
 async function pushLiveScore() {
-  if (!GS_URL || !S.currentMatch) return;
+  if (!GS_URL || !S.currentMatch || !matchStarted) return;
   const m = S.currentMatch;
+  const origSideA  = m.origSideA || 'a';
+  const scoreAOrig = origSideA === 'a' ? S.a : S.b;
+  const scoreBOrig = origSideA === 'a' ? S.b : S.a;
+  const teamAOrig  = m.origTeamA || m.teamA;
+  const teamBOrig  = m.origTeamB || m.teamB;
+
+  // Cập nhật local ngay lập tức
+  liveScores[m.key] = {
+    scoreA: scoreAOrig, scoreB: scoreBOrig,
+    teamA: teamAOrig, teamB: teamBOrig,
+    updatedAt: now()
+  };
+  renderMatchGrid(); // cập nhật tỉ số trên grid ngay
+
   const row = [
-    m.code,
-    m.teamA, S.a, S.b, m.teamB,
-    S.server === 'a' ? m.teamA : m.teamB,
+    m.key,          // composite key noidung|bang|code để nhận diện đúng
+    teamAOrig, scoreAOrig, scoreBOrig, teamBOrig,
+    S.server === 'a' ? teamAOrig : teamBOrig,
     'Game ' + S.game,
     now()
   ];
-  // fire & forget (no-cors)
   syncGS('live', row);
 }
 
@@ -1629,15 +1646,55 @@ function renderMatchGrid() {
     }
 
     btn.className = 'match-btn' + (done ? ' done' : '') + (active ? ' active' : '') + (isLive ? ' live' : '');
-    const hasSc = (m.matchScoreA !== null && m.matchScoreA !== undefined &&
-                   m.matchScoreB !== null && m.matchScoreB !== undefined);
-    const scA = hasSc ? m.matchScoreA : '';
-    const scB = hasSc ? m.matchScoreB : '';
-    // Highlight đội thắng (điểm cao hơn)
-    const winA = hasSc && m.matchScoreA > m.matchScoreB;
-    const winB = hasSc && m.matchScoreB > m.matchScoreA;
-    const scStyleA = hasSc ? (winA ? 'background:#ef4444;color:#fff;' : 'background:#fee2e2;color:#b91c1c;') : '';
-    const scStyleB = hasSc ? (winB ? 'background:#ef4444;color:#fff;' : 'background:#fee2e2;color:#b91c1c;') : '';
+
+    // Điểm hiển thị: ưu tiên live score > matchScore
+    const liveEntry = liveScores[m.key]; // từ máy khác
+    const hasLive   = !done && liveEntry; // không show live nếu đã hoàn thành
+    const hasLocalLive = !done && isLive; // máy này đang chấm
+
+    let scA, scB, winA, winB, scStyleA, scStyleB, hasSc, isLiveScore = false;
+
+    if (hasLocalLive) {
+      // Máy này đang chấm — lấy S.a/S.b theo đội gốc
+      const origSideA = S.currentMatch?.origSideA || 'a';
+      scA = origSideA === 'a' ? S.a : S.b;
+      scB = origSideA === 'a' ? S.b : S.a;
+      hasSc = true; isLiveScore = true;
+    } else if (hasLive) {
+      // Máy khác đang chấm
+      scA = liveEntry.scoreA; scB = liveEntry.scoreB;
+      hasSc = true; isLiveScore = true;
+    } else if (m.matchScoreA !== null && m.matchScoreA !== undefined &&
+               m.matchScoreB !== null && m.matchScoreB !== undefined) {
+      // Kết quả cuối (đã lưu)
+      scA = m.matchScoreA; scB = m.matchScoreB;
+      hasSc = true; isLiveScore = false;
+    } else {
+      hasSc = false;
+    }
+
+    winA = hasSc && scA > scB;
+    winB = hasSc && scB > scA;
+
+    if (isLiveScore) {
+      // Tỉ số đang chấm: màu cam
+      scStyleA = `background:#ea580c;color:#fff;`;
+      scStyleB = `background:#ea580c;color:#fff;`;
+      if (winA) scStyleB = `background:#fed7aa;color:#c2410c;`;
+      if (winB) scStyleA = `background:#fed7aa;color:#c2410c;`;
+    } else {
+      // Kết quả cuối: màu đỏ
+      scStyleA = hasSc ? (winA ? 'background:#ef4444;color:#fff;' : 'background:#fee2e2;color:#b91c1c;') : '';
+      scStyleB = hasSc ? (winB ? 'background:#ef4444;color:#fff;' : 'background:#fee2e2;color:#b91c1c;') : '';
+    }
+
+    // Trạng thái live từ máy khác cũng hiện "Đang thi đấu"
+    const isOtherLive = !done && !active && hasLive;
+    if (isOtherLive && statusLabel === '⬜ Chưa thi đấu') {
+      statusLabel = '🟠 Đang thi đấu';
+      statusStyle = 'color:#ea580c;font-weight:700;font-size:9px';
+      btn.className += ' live';
+    }
 
     btn.innerHTML =
       // Header: mã trận + nội dung · bảng
@@ -1849,6 +1906,7 @@ function resetMatch() {
   swapNotified=false;
   document.getElementById('swap-notice').classList.remove('show');
   pushLog('↺ Reset',null);
+  if (S.currentMatch?.key) delete liveScores[S.currentMatch.key];
   _setMatchStarted(false, false);
   render();
 }
@@ -2027,7 +2085,9 @@ function confirmSave() {
   toast(`💾 Đã lưu: ${m.code} · ${scoreOrig_A}–${scoreOrig_B} · ${winnerLabel}`, 4000);
 
   // Reset trạng thái bắt đầu (trận đã hoàn thành)
-  _setMatchStarted(false, true); // true = done → hiện "Hoàn thành"
+  _setMatchStarted(false, true);
+  // Xóa live score local
+  if (m.key) delete liveScores[m.key];
 
   // 5. Sync GSheets hoàn toàn ngầm
   if (GS_URL) {
@@ -2191,7 +2251,46 @@ function schedulePoll() {
 async function pollMatches() {
   if (!GS_URL) return;
   try {
-    const data = await getFromGS('?action=matches');
+    // Fetch song song: matches + live scores
+    const [data, liveData] = await Promise.all([
+      getFromGS('?action=matches'),
+      getFromGS('?action=live&code=all')
+    ]);
+
+    // ── Xử lý Live Scores từ các máy khác ──
+    if (liveData?.rows?.length > 1) {
+      const newLive = {};
+      liveData.rows.slice(1).forEach(r => {
+        // row: [0]key [1]teamA [2]scoreA [3]scoreB [4]teamB [5]server [6]game [7]updatedAt
+        const key = String(r[0]||'').trim();
+        if (!key) return;
+        newLive[key] = {
+          scoreA: Number(r[2])||0,
+          scoreB: Number(r[3])||0,
+          teamA:  String(r[1]||'').trim(),
+          teamB:  String(r[4]||'').trim(),
+          updatedAt: String(r[7]||'')
+        };
+      });
+      // Merge: giữ local nếu là máy đang chấm
+      const myKey = S.currentMatch?.key;
+      Object.keys(newLive).forEach(k => {
+        if (k !== myKey) liveScores[k] = newLive[k]; // chỉ update máy khác
+      });
+      // Xóa live scores không còn trong sheet
+      Object.keys(liveScores).forEach(k => {
+        if (k !== myKey && !newLive[k]) delete liveScores[k];
+      });
+      renderMatchGrid();
+    } else if (!liveData) {
+      // Nếu không fetch được live → không xóa cache
+    } else {
+      // Sheet live rỗng → xóa tất cả live của máy khác
+      const myKey = S.currentMatch?.key;
+      Object.keys(liveScores).forEach(k => { if (k !== myKey) delete liveScores[k]; });
+      renderMatchGrid();
+    }
+
     if (!data?.rows?.length) return;
 
     const newCount = data.rows.length - 1;
