@@ -437,6 +437,9 @@ select, input { font-family: inherit; }
       <button class="wr-btn" data-rule="15c2m21" onclick="setRule('15c2m21')">
         <span class="ws">15 / 21</span>Cách 2, max 21
       </button>
+      <button class="wr-btn" data-rule="25"      onclick="setRule('25')">
+        <span class="ws">25</span>Chạm 25
+      </button>
     </div>
     <div class="win-info-box" id="win-info">Thắng khi chạm <strong>11</strong> điểm. Đến <strong>6 điểm</strong> tự động nhắc đổi sân.</div>
   </div>
@@ -895,16 +898,18 @@ function toggle(hd) {
 //  WIN RULES
 // ══════════════════════════════════════════
 const RULES = {
-  '11':      {label:'Chạm 11',base:11,deuce:false,max:11,swap:6},
-  '11c2m15': {label:'11 cách 2 (max 15)',base:11,deuce:true,max:15,swap:6},
-  '15':      {label:'Chạm 15',base:15,deuce:false,max:15,swap:8},
-  '15c2m21': {label:'15 cách 2 (max 21)',base:15,deuce:true,max:21,swap:8},
+  '11':      {label:'Chạm 11',        base:11,deuce:false,max:11,swap:6},
+  '11c2m15': {label:'11 cách 2 (max 15)',base:11,deuce:true, max:15,swap:6},
+  '15':      {label:'Chạm 15',        base:15,deuce:false,max:15,swap:8},
+  '15c2m21': {label:'15 cách 2 (max 21)',base:15,deuce:true, max:21,swap:8},
+  '25':      {label:'Chạm 25',        base:25,deuce:false,max:25,swap:13},
 };
 const RULE_DESC = {
   '11':      'Thắng khi chạm <strong>11</strong> điểm. Đến <strong>6 điểm</strong> tự động nhắc đổi sân.',
   '11c2m15': 'Thắng khi chạm 11. Hòa 10-10 → cách 2, max <strong>15</strong>. Đến <strong>6 điểm</strong> nhắc đổi sân.',
   '15':      'Thắng khi chạm <strong>15</strong> điểm. Đến <strong>8 điểm</strong> tự động nhắc đổi sân.',
   '15c2m21': 'Thắng khi chạm 15. Hòa 14-14 → cách 2, max <strong>21</strong>. Đến <strong>8 điểm</strong> nhắc đổi sân.',
+  '25':      'Thắng khi chạm <strong>25</strong> điểm. Đến <strong>13 điểm</strong> tự động nhắc đổi sân.',
 };
 let winRule = '11';
 let swapNotified = false; // đã thông báo đổi sân game này chưa
@@ -1188,26 +1193,25 @@ async function loadAllFromGS() {
   if (!_resultsCleared && resultData?.rows?.length > 1) {
     resultData.rows.slice(1).forEach(r => {
       if (!r[0] || !r[3]) return;
-      const code = String(r[3]||'').trim();
-      const match = matchList.find(m => m.code === code);
-      if (!match) return;
-      if (!S.results[match.key]) {
-        S.results[match.key] = {
-          savedAt:  r[0],
-          noidung:  String(r[1]||'').trim(),
-          bang:     String(r[2]||'').trim(),
-          code,
-          teamA:    String(r[4]||'').trim(),
-          teamB:    String(r[5]||'').trim(),
-          scoreA:   Number(r[6])||0,
-          scoreB:   Number(r[7])||0,
-          winner:   String(r[8]||'').trim(),
-          court:    String(r[9]||'').trim(),
-          referee:  String(r[10]||'').trim(),
-          winRule:  String(r[11]||'').trim(),
-        };
-        addedResults++;
-      }
+      const noidung = String(r[1]||'').trim();
+      const bang    = String(r[2]||'').trim();
+      const code    = String(r[3]||'').trim();
+      // Composite key khớp với match.key = noidung|bang|code
+      const key = `${noidung}|${bang}|${code}`;
+      // Luôn ghi đè bằng dữ liệu mới nhất từ GSheets (không chặn nếu đã có)
+      S.results[key] = {
+        savedAt: r[0],
+        noidung, bang, code,
+        teamA:   String(r[4]||'').trim(),
+        teamB:   String(r[5]||'').trim(),
+        scoreA:  Number(r[6])||0,
+        scoreB:  Number(r[7])||0,
+        winner:  String(r[8]||'').trim(),
+        court:   String(r[9]||'').trim(),
+        referee: String(r[10]||'').trim(),
+        winRule: String(r[11]||'').trim(),
+      };
+      addedResults++;
     });
     try { localStorage.setItem('pb_res6', JSON.stringify(S.results)); } catch(e){}
   }
@@ -2494,9 +2498,17 @@ function renderBXH() {
   // Chọn nguồn dữ liệu: GSheets cache ưu tiên, fallback S.results local
   let results;
   if (_bxhRawRows) {
-    // Từ GSheets: parse tất cả rows, không lọc theo matchList
-    results = _bxhRawRows
-      .filter(r => r[0] && r[3])       // phải có savedAt + code
+    // Từ GSheets: dedupe theo composite key (noidung|bang|code) — giữ dòng mới nhất
+    const byKey = {};
+    _bxhRawRows
+      .filter(r => r[0] && r[3])
+      .forEach(r => {
+        const key = `${String(r[1]||'').trim()}|${String(r[2]||'').trim()}|${String(r[3]||'').trim()}`;
+        if (!byKey[key] || String(r[0]) > String(byKey[key][0])) {
+          byKey[key] = r;
+        }
+      });
+    results = Object.values(byKey)
       .map(_parseGSRow)
       .filter(r => {
         if (filterND   && r.noidung !== filterND)   return false;
@@ -2504,7 +2516,7 @@ function renderBXH() {
         return true;
       });
   } else {
-    // Fallback: S.results local
+    // Fallback: S.results local (đã dedupe theo key)
     results = Object.values(S.results).filter(r => {
       if (filterND   && r.noidung !== filterND)   return false;
       if (filterBang && r.bang    !== filterBang) return false;
