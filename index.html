@@ -1583,15 +1583,7 @@ function renderMatchGrid() {
     return;
   }
 
-  // Đã chọn nội dung nhưng chưa chọn bảng → hiện tổng số trận nội dung đó
-  const totalND = matchList.filter(m => m.noidung === filterND).length;
-  if (!filterBang) {
-    badge.textContent = totalND;
-    if (title) title.textContent = `📋 ${filterND}`;
-    grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;color:var(--g500)">${filterND}: <strong>${totalND} trận</strong> · Chọn <strong>Bảng</strong> để xem danh sách</div>`;
-    return;
-  }
-
+  // Lọc theo nội dung + bảng (bảng optional)
   const filtered = matchList.filter(m => {
     const nd   = (m.noidung || '').trim();
     const bang = (m.bang    || '').trim();
@@ -2735,7 +2727,12 @@ renderBXH();
 renderCameraList();
 
 // Lắng nghe thay đổi filter
-document.getElementById('sel-noidung').addEventListener('change', renderMatchGrid);
+document.getElementById('sel-noidung').addEventListener('change', () => {
+  // Reset bảng về -- Chọn bảng -- khi đổi nội dung
+  const bangSel = document.getElementById('sel-bang');
+  if (bangSel) bangSel.value = '';
+  renderMatchGrid();
+});
 document.getElementById('sel-bang').addEventListener('change', renderMatchGrid);
 
 // Làm mới từ GSheets ngầm
