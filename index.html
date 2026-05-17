@@ -131,6 +131,14 @@ select, input { font-family: inherit; }
 .team-card.winner  { border-color:var(--amber); background:var(--amber-bg); box-shadow:0 0 0 4px rgba(245,158,11,.12); }
 .srv-bar { height:5px; width:26px; border-radius:3px; background:var(--green); margin:0 auto 5px; opacity:0; transition:opacity .2s; }
 .serving .srv-bar { opacity:1; }
+/* Serve ball indicator inside team card */
+.srv-ball-row { display:flex; align-items:center; justify-content:center; gap:6px; min-height:22px; margin-bottom:2px; }
+.srv-ball { font-size:18px; opacity:0; transition:all .2s; transform:scale(.6); }
+.serving .srv-ball { opacity:1; transform:scale(1); }
+.srv-num-badge { font-size:10px; font-weight:700; font-family:'Oswald',sans-serif;
+  background:var(--green); color:#fff; border-radius:10px; padding:1px 7px;
+  opacity:0; transition:all .2s; transform:scale(.6); white-space:nowrap; }
+.serving .srv-num-badge { opacity:1; transform:scale(1); }
 .tname { font-size:11px; font-weight:600; color:var(--g500); text-transform:uppercase; letter-spacing:.3px; min-height:28px; display:flex; align-items:center; justify-content:center; line-height:1.3; }
 .snum { font-family:'Oswald',sans-serif; font-size:84px; font-weight:700; line-height:1; margin:3px 0 5px; color:var(--g900); transition:color .2s; }
 .serving .snum { color:var(--green-dk); }
@@ -247,7 +255,20 @@ select, input { font-family: inherit; }
 /* ── EMPTY ── */
 .empty-msg { text-align:center; padding:14px; color:var(--g400); font-size:12px; }
 
-/* ── GS CARD HIGHLIGHT ── */
+/* ── BỐC THĂM ── */
+.toss-team-btn { border:2.5px solid var(--g200); border-radius:14px; padding:12px 10px; background:var(--g50); cursor:pointer; transition:all .18s; font-family:inherit; width:100%; text-align:center; }
+.toss-team-btn:hover,.toss-team-btn.selected { border-color:var(--green); background:var(--green-bg); }
+.toss-team-btn .toss-team-name { font-size:13px; font-weight:700; color:var(--g900); line-height:1.35; }
+.toss-team-btn .toss-team-label { font-size:10px; color:var(--g400); margin-top:2px; }
+.toss-choice-btn { border:2px solid var(--g200); border-radius:12px; padding:11px 8px; background:var(--g50); cursor:pointer; transition:all .18s; font-family:inherit; text-align:center; flex:1; }
+.toss-choice-btn:hover,.toss-choice-btn.selected { border-color:var(--green); background:var(--green-bg); }
+.toss-choice-icon { font-size:22px; display:block; margin-bottom:4px; }
+.toss-choice-label { font-size:12px; font-weight:700; color:var(--g900); display:block; }
+.toss-choice-desc { font-size:10px; color:var(--g400); display:block; margin-top:2px; line-height:1.3; }
+.toss-summary-box { background:var(--green-bg); border:1.5px solid var(--green-bd); border-radius:12px; padding:12px 14px; font-size:12px; line-height:1.8; }
+.toss-summary-box strong { color:var(--green-dk); }
+.spin-drum { font-size:52px; text-align:center; display:block; line-height:1; animation:spin-drum .12s linear infinite; }
+@keyframes spin-drum { 0%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}100%{transform:rotate(-8deg)} }
 #gs-card { transition: box-shadow .3s, border .3s; }
 #gs-card.no-url { border: 2px solid #fcd34d; box-shadow: 0 0 0 3px rgba(251,191,36,.15); }
 
@@ -433,6 +454,7 @@ select, input { font-family: inherit; }
             <option value="15">Chạm 15 – đổi sân tại 8 điểm</option>
             <option value="15c2m21">Chạm 15, cách 2 max 21 – đổi sân tại 8 điểm</option>
             <option value="21">Chạm 21 – đổi sân tại 11 điểm</option>
+            <option value="24">Chạm 24 – đổi sân tại 12 điểm</option>
             <option value="25">Chạm 25 – đổi sân tại 13 điểm</option>
           </select>
         </div>
@@ -476,6 +498,10 @@ select, input { font-family: inherit; }
     <div class="tgt-tag" id="tgt-a">→11</div>
     <div class="srv-bar"></div>
     <div class="tname" id="name-a">Đội A</div>
+    <div class="srv-ball-row">
+      <span class="srv-ball">🎾</span>
+      <span class="srv-num-badge" id="srv-num-a">Giao 1</span>
+    </div>
     <div class="snum" id="score-a">0</div>
     <div class="sc-btns">
       <button class="sc-btn minus" onclick="addScore('a',-1)">−</button>
@@ -504,6 +530,10 @@ select, input { font-family: inherit; }
     <div class="tgt-tag" id="tgt-b">→11</div>
     <div class="srv-bar"></div>
     <div class="tname" id="name-b">Đội B</div>
+    <div class="srv-ball-row">
+      <span class="srv-ball">🎾</span>
+      <span class="srv-num-badge" id="srv-num-b">Giao 1</span>
+    </div>
     <div class="snum" id="score-b">0</div>
     <div class="sc-btns">
       <button class="sc-btn minus" onclick="addScore('b',-1)">−</button>
@@ -517,11 +547,17 @@ select, input { font-family: inherit; }
 </div>
 
 <!-- ── CONTROLS ── -->
-<div class="ctrl-row">
+<div class="ctrl-row" style="grid-template-columns:1fr 1fr 1fr 1fr">
   <button class="ctrl-btn start" id="btn-start" onclick="startMatch()">▶ Bắt đầu</button>
   <button class="ctrl-btn undo"  onclick="undo()">↩ Undo</button>
   <button class="ctrl-btn save"  onclick="saveResult()">💾 Lưu</button>
   <button class="ctrl-btn reset" onclick="resetMatch()">↺ Reset</button>
+</div>
+<!-- Bốc thăm — nằm dưới ctrl-row, chỉ hiện khi có trận -->
+<div id="toss-bar" style="display:none;margin-top:4px">
+  <button onclick="openTossModal()" style="width:100%;border:2px dashed var(--green-bd);background:var(--green-bg);color:var(--green-dk);border-radius:10px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">
+    🎲 Bốc thăm chọn quyền
+  </button>
 </div>
 
 <!-- ── NHẬT KÝ ── -->
@@ -807,6 +843,105 @@ select, input { font-family: inherit; }
   </div>
 </div>
 
+<!-- ── TOSS MODAL ── -->
+<div class="modal-ov" id="modal-toss">
+  <div class="modal-box" style="max-width:400px;padding:0;overflow:hidden">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,var(--green-dk),var(--green));padding:16px 18px;color:#fff">
+      <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;letter-spacing:.5px">🎲 Bốc thăm chọn quyền</div>
+      <div id="toss-match-title" style="font-size:11px;opacity:.85;margin-top:2px"></div>
+    </div>
+    <!-- Steps container -->
+    <div style="padding:16px 18px 18px">
+
+      <!-- STEP 1: Chọn đội bốc thăm / Random -->
+      <div id="toss-step-1">
+        <div style="font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Bước 1 — Chọn đội bốc thăm trước</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <button class="toss-team-btn" id="toss-btn-a" onclick="tossPickTeam('a')">
+            <div class="toss-team-name" id="toss-name-a">Đội A</div>
+            <div class="toss-team-label">Đội A</div>
+          </button>
+          <button class="toss-team-btn" id="toss-btn-b" onclick="tossPickTeam('b')">
+            <div class="toss-team-name" id="toss-name-b">Đội B</div>
+            <div class="toss-team-label">Đội B</div>
+          </button>
+        </div>
+        <div style="text-align:center;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--g400);margin-bottom:8px">— hoặc —</div>
+          <button onclick="tossRandom()" style="border:none;background:var(--amber-bg);color:var(--amber-dk);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
+            🎲 Quay ngẫu nhiên
+          </button>
+        </div>
+        <!-- Spinning drum -->
+        <div id="toss-spinning" style="display:none;text-align:center;padding:10px 0">
+          <span class="spin-drum" id="toss-drum">🎾</span>
+          <div style="font-size:12px;color:var(--g500);margin-top:6px">Đang quay...</div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Đội thắng chọn quyền -->
+      <div id="toss-step-2" style="display:none">
+        <div id="toss-winner-announce" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:12px;padding:12px;text-align:center;margin-bottom:14px">
+          <div style="font-size:11px;color:#78350f;font-weight:600;margin-bottom:3px">🏆 Thắng bốc thăm</div>
+          <div id="toss-winner-name" style="font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;color:#1a1a1a;line-height:1.2"></div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Bước 2 — Chọn quyền</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="toss-choice-btn" onclick="tossChoose('serve')">
+            <span class="toss-choice-icon">🏓</span>
+            <span class="toss-choice-label">Giao bóng</span>
+            <span class="toss-choice-desc">Giao bóng trước</span>
+          </button>
+          <button class="toss-choice-btn" onclick="tossChoose('receive')">
+            <span class="toss-choice-icon">🛡</span>
+            <span class="toss-choice-label">Đỡ bóng</span>
+            <span class="toss-choice-desc">Đỡ giao bóng</span>
+          </button>
+          <button class="toss-choice-btn" onclick="tossChoose('side')">
+            <span class="toss-choice-icon">⇄</span>
+            <span class="toss-choice-label">Chọn sân</span>
+            <span class="toss-choice-desc">Chọn sân/vị trí</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Nhập tên VĐV giao bóng / đỡ -->
+      <div id="toss-step-3" style="display:none">
+        <div style="font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Bước 3 — Người giao & đỡ bóng đầu tiên</div>
+        <div style="display:grid;gap:10px;margin-bottom:14px">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--g700);margin-bottom:4px">🏓 Người giao bóng</div>
+            <div style="font-size:10px;color:var(--g400);margin-bottom:5px" id="toss-server-team-label"></div>
+            <input class="inp" id="toss-server-name" placeholder="Nhập tên người giao bóng…" style="font-size:13px">
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--g700);margin-bottom:4px">🛡 Người đỡ bóng</div>
+            <div style="font-size:10px;color:var(--g400);margin-bottom:5px" id="toss-receiver-team-label"></div>
+            <input class="inp" id="toss-receiver-name" placeholder="Nhập tên người đỡ bóng…" style="font-size:13px">
+          </div>
+        </div>
+        <button onclick="tossConfirmPlayers()" style="width:100%;border:none;background:var(--green);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Tiếp theo →</button>
+      </div>
+
+      <!-- STEP 4: Tóm tắt & xác nhận -->
+      <div id="toss-step-4" style="display:none">
+        <div style="font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Tóm tắt bốc thăm</div>
+        <div class="toss-summary-box" id="toss-summary"></div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button onclick="tossPrev()" style="flex:0 0 auto;border:1.5px solid var(--g200);background:var(--g50);color:var(--g700);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">← Sửa</button>
+          <button onclick="tossApply()" style="flex:1;border:none;background:var(--green);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✅ Xác nhận & Bắt đầu</button>
+        </div>
+      </div>
+
+    </div>
+    <!-- Footer close -->
+    <div style="border-top:1px solid var(--g100);padding:10px 18px;display:flex;justify-content:flex-end">
+      <button onclick="closeModal('modal-toss')" style="border:none;background:none;color:var(--g400);font-size:12px;cursor:pointer;font-family:inherit">✕ Đóng</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── SAVE MODAL ── -->
 <div class="modal-ov" id="modal-save">
   <div class="modal-box">
@@ -905,6 +1040,7 @@ const RULES = {
   '15':      {label:'Chạm 15',           base:15,deuce:false,max:15,swap:8},
   '15c2m21': {label:'15 cách 2 (max 21)',base:15,deuce:true, max:21,swap:8},
   '21':      {label:'Chạm 21',           base:21,deuce:false,max:21,swap:11},
+  '24':      {label:'Chạm 24',           base:24,deuce:false,max:24,swap:12},
   '25':      {label:'Chạm 25',           base:25,deuce:false,max:25,swap:13},
 };
 const RULE_DESC = {
@@ -913,6 +1049,7 @@ const RULE_DESC = {
   '15':      'Thắng khi chạm <strong>15</strong> điểm. Đến <strong>8 điểm</strong> tự động nhắc đổi sân.',
   '15c2m21': 'Thắng khi chạm 15. Hòa 14-14 → cách 2, max <strong>21</strong>. Đến <strong>8 điểm</strong> nhắc đổi sân.',
   '21':      'Thắng khi chạm <strong>21</strong> điểm. Đến <strong>11 điểm</strong> tự động nhắc đổi sân.',
+  '24':      'Thắng khi chạm <strong>24</strong> điểm. Đến <strong>12 điểm</strong> tự động nhắc đổi sân.',
   '25':      'Thắng khi chạm <strong>25</strong> điểm. Đến <strong>13 điểm</strong> tự động nhắc đổi sân.',
 };
 let winRule = '11';
@@ -1491,7 +1628,7 @@ function confirmAdd() {
 // ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
-let S = {a:0,b:0,server:'a',serveNum:1,game:1,history:[],currentMatch:null,results:{}};
+let S = {a:0, b:0, server:'a', serveNum:2, isFirstServe:true, game:1, history:[], currentMatch:null, results:{}};
 try { S.results = JSON.parse(localStorage.getItem('pb_res6')||'{}'); } catch(e){}
 let evLog = [];
 try { evLog = JSON.parse(localStorage.getItem('pb_ev6')||'[]'); } catch(e){}
@@ -1507,8 +1644,15 @@ function render() {
   document.getElementById('card-b').classList.toggle('serving', S.server==='b');
   document.getElementById('srv1').classList.toggle('active', S.serveNum===1);
   document.getElementById('srv2').classList.toggle('active', S.serveNum===2);
+  // Serve number badge in each card
+  const snA = document.getElementById('srv-num-a');
+  const snB = document.getElementById('srv-num-b');
+  const srvLabel = S.isFirstServe ? 'Giao 2 ★' : `Giao ${S.serveNum}`;
+  if (snA) snA.textContent = srvLabel;
+  if (snB) snB.textContent = srvLabel;
   checkWin();
   checkAutoSwap();
+  updateTossBar();
 }
 
 function checkWin() {
@@ -1783,35 +1927,53 @@ function sn(name) {
 // ══════════════════════════════════════════
 //  ACTIONS
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+//  PICKLEBALL SERVE RULES
+//  - Đầu game: chỉ có Server 2 (1 lần giao)
+//  - Các rally sau: Server 1 → nếu thua → Server 2 → nếu thua → đổi đội, Server 1
+//  - Chỉ đội đang giao mới được tính điểm
+//  - Khi giao bóng thắng điểm: giữ nguyên server (cùng người giao tiếp)
+//  - Khi giao bóng thua điểm: chuyển server (trong đội nếu còn S1; sang đội kia nếu hết)
+// ══════════════════════════════════════════
+
 function addScore(side, delta) {
   if (!matchStarted) { toast('⚠️ Nhấn Bắt đầu trước!'); return; }
-  const snap=JSON.stringify({a:S.a,b:S.b,server:S.server,serveNum:S.serveNum});
-  if (side==='a') S.a=Math.max(0,S.a+delta);
-  else S.b=Math.max(0,S.b+delta);
-  if (delta>0) S.server=side;
-  const who=S.currentMatch?sn(side==='a'?S.currentMatch.teamA:S.currentMatch.teamB):(side==='a'?'Đội A':'Đội B');
-  const desc=delta>0?`${who} +1`:`Sửa điểm ${side.toUpperCase()}`;
-  pushLog(desc,snap);
-  S.history.push({snap,desc});
+  const snap = JSON.stringify({a:S.a, b:S.b, server:S.server, serveNum:S.serveNum, isFirstServe:S.isFirstServe});
+
+  if (delta > 0) {
+    // Cộng điểm
+    if (side === 'a') S.a = Math.max(0, S.a + 1);
+    else              S.b = Math.max(0, S.b + 1);
+
+    // Điểm cho đội đang giao: server giữ nguyên, giao tiếp
+    // Điểm cho đội không giao: chuyển quyền giao
+    if (side !== S.server) {
+      // Đội không giao ghi điểm → chuyển quyền giao theo luật
+      _advanceServe();
+    }
+    // Nếu đội đang giao ghi điểm → server không đổi
+  } else {
+    // Trừ điểm (sửa sai) — chỉ trừ số, không đổi server
+    if (side === 'a') S.a = Math.max(0, S.a - 1);
+    else              S.b = Math.max(0, S.b - 1);
+  }
+
+  const who  = S.currentMatch ? sn(side==='a' ? S.currentMatch.teamA : S.currentMatch.teamB) : (side==='a'?'Đội A':'Đội B');
+  const desc = delta > 0 ? `${who} +1` : `Sửa điểm ${side.toUpperCase()}`;
+  pushLog(desc, snap);
+  S.history.push({snap, desc});
   render();
-  if (delta>0) {
+
+  if (delta > 0) {
     pushLiveScore();
     if (GS_URL && S.currentMatch) {
       const m = S.currentMatch;
-      const origSideA = m.origSideA || 'a';
-      const teamAOrig = m.origTeamA || m.teamA;
-      const teamBOrig = m.origTeamB || m.teamB;
-
-      // S.a = điểm của card bên TRÁI màn hình hiện tại
-      // origSideA = 'a' nghĩa là Đội A gốc đang ở bên TRÁI (card-a)
-      // → scoreAOrig = điểm Đội A gốc = S.a nếu origSideA==='a', ngược lại = S.b
-      const scoreAOrig = origSideA === 'a' ? S.a : S.b;
-      const scoreBOrig = origSideA === 'a' ? S.b : S.a;
-
-      // side='a' nghĩa là card trái ghi điểm
-      // Đội A gốc ghi điểm khi: (side==='a' và origSideA==='a') HOẶC (side==='b' và origSideA==='b')
+      const origSideA   = m.origSideA || 'a';
+      const teamAOrig   = m.origTeamA || m.teamA;
+      const teamBOrig   = m.origTeamB || m.teamB;
+      const scoreAOrig  = origSideA === 'a' ? S.a : S.b;
+      const scoreBOrig  = origSideA === 'a' ? S.b : S.a;
       const scorerIsOrigA = (side === origSideA);
-
       syncGS('log', [
         nowMs(), now(),
         m.noidung||'', m.bang||'', m.code,
@@ -1822,12 +1984,29 @@ function addScore(side, delta) {
         teamBOrig,
         'Game '+S.game,
         RULES[winRule].label,
-        document.getElementById('inp-court').value||'', // Sân
-        '',                                          // Sự kiện — trống (ghi điểm bình thường)
-        '',                                          // Đội thắng — trống
+        document.getElementById('inp-court').value||'',
+        '',
+        '',
         document.getElementById('inp-referee').value||''
       ]);
     }
+  }
+}
+
+// Chuyển quyền giao theo đúng luật pickleball
+function _advanceServe() {
+  if (S.isFirstServe) {
+    // Đầu game chỉ có Server 2 → khi thua → đổi đội, bắt đầu bằng Server 1
+    S.isFirstServe = false;
+    S.server  = S.server === 'a' ? 'b' : 'a';
+    S.serveNum = 1;
+  } else if (S.serveNum === 1) {
+    // Server 1 thua → Server 2 cùng đội
+    S.serveNum = 2;
+  } else {
+    // Server 2 thua → đổi đội, bắt đầu từ Server 1
+    S.server   = S.server === 'a' ? 'b' : 'a';
+    S.serveNum = 1;
   }
 }
 
@@ -1861,7 +2040,12 @@ function _setMatchStarted(started, done) {
     sb?.classList.add('not-started');
   }
 }
-function setServe(n) { S.serveNum=n; pushLog(`Giao ${n}`,null); render(); }
+function setServe(n) {
+  S.serveNum = n;
+  if (S.isFirstServe && n === 1) S.isFirstServe = false; // manual set G1 → hết first serve
+  pushLog(`Giao ${n}`, null);
+  render();
+}
 function toggleServe() { S.server=S.server==='a'?'b':'a'; render(); }
 
 function swapSides() {
@@ -1884,7 +2068,7 @@ function undo() {
   if (!S.history.length) return;
   const last=S.history.pop();
   const prev=JSON.parse(last.snap);
-  S.a=prev.a; S.b=prev.b; S.server=prev.server; S.serveNum=prev.serveNum||1;
+  S.a=prev.a; S.b=prev.b; S.server=prev.server; S.serveNum=prev.serveNum||2; S.isFirstServe=prev.isFirstServe??false;
   // reset swap flag nếu cả 2 đội đều dưới ngưỡng
   if (Math.max(S.a, S.b) < RULES[winRule].swap) swapNotified=false;
   pushLog('↩ Undo: '+last.desc,null);
@@ -1893,16 +2077,17 @@ function undo() {
 
 function nextGame() {
   S.game++; S.a=0; S.b=0; S.history=[];
+  S.serveNum = 2; S.isFirstServe = true; // đầu game mới luôn là giao 2
   swapNotified=false;
   document.getElementById('swap-notice').classList.remove('show');
-  pushLog(`▶ Game ${S.game} bắt đầu`, null);
+  pushLog(`▶ Game ${S.game} bắt đầu — Giao 2`, null);
   logToGS(`▶ Bắt đầu Game ${S.game}`, '');
   render();
 }
 
 function resetMatch() {
   if (!confirm('Đặt lại về 0–0?')) return;
-  S.a=0; S.b=0; S.game=1; S.serveNum=1; S.history=[];
+  S.a=0; S.b=0; S.game=1; S.serveNum=2; S.isFirstServe=true; S.history=[];
   swapNotified=false;
   document.getElementById('swap-notice').classList.remove('show');
   pushLog('↺ Reset',null);
@@ -2086,8 +2271,9 @@ function confirmSave() {
 
   // Reset trạng thái bắt đầu (trận đã hoàn thành)
   _setMatchStarted(false, true);
-  // Xóa live score local
+  // Xóa live score local + ẩn toss-bar
   if (m.key) delete liveScores[m.key];
+  updateTossBar();
 
   // 5. Sync GSheets hoàn toàn ngầm
   if (GS_URL) {
@@ -2125,7 +2311,7 @@ function loadMatch(idx) {
       try { localStorage.setItem('pb_res6', JSON.stringify(S.results)); } catch(e) {}
     }
   }
-  S.game=1; S.server='a'; S.serveNum=1; S.history=[];
+  S.game=1; S.server='a'; S.serveNum=2; S.isFirstServe=true; S.history=[];
   swapNotified=false;
   // Luôn ẩn swap-notice khi chọn trận
   const snotice = document.getElementById('swap-notice');
@@ -2140,6 +2326,7 @@ function loadMatch(idx) {
   pushLog(`📋 Mở: ${m.code}`,null);
   // Nếu trận đã hoàn thành → nút "Hoàn thành", ngược lại → "Bắt đầu"
   _setMatchStarted(false, matchHasScore);
+  updateTossBar();
   render(); renderMatchGrid();
   toast(`📋 ${m.code}: ${sn(m.teamA)} vs ${sn(m.teamB)}`);
 }
@@ -2220,7 +2407,170 @@ function changePassword() {
   toast('✅ Đã đổi mật khẩu thành công!', 3000);
 }
 
-// ── AUTO-POLL: tự động phát hiện và tải trận mới từ GSheets ──
+function updateTossBar() {
+  const bar = document.getElementById('toss-bar');
+  if (!bar) return;
+  const hasDone = S.currentMatch && S.results[S.currentMatch.key];
+  bar.style.display = (S.currentMatch && !hasDone) ? '' : 'none';
+}
+// ══════════════════════════════════════════
+const _toss = {
+  step: 1,
+  winner: null,   // 'a' | 'b'
+  choice: null,   // 'serve' | 'receive' | 'side'
+  serverName: '',
+  receiverName: '',
+  serverSide: null, // 'a' | 'b' — side đang giao bóng
+};
+
+function openTossModal() {
+  if (!S.currentMatch) { toast('⚠️ Chưa chọn trận!'); return; }
+  const m = S.currentMatch;
+  // Reset state
+  Object.assign(_toss, {step:1, winner:null, choice:null, serverName:'', receiverName:'', serverSide:null});
+  // Fill tên đội
+  document.getElementById('toss-name-a').textContent = sn(m.origTeamA || m.teamA);
+  document.getElementById('toss-name-b').textContent = sn(m.origTeamB || m.teamB);
+  document.getElementById('toss-match-title').textContent = `${m.code} · ${m.noidung}${m.bang?' · '+m.bang:''}`;
+  // Reset button styles
+  document.getElementById('toss-btn-a').classList.remove('selected');
+  document.getElementById('toss-btn-b').classList.remove('selected');
+  document.querySelectorAll('.toss-choice-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('toss-server-name').value = '';
+  document.getElementById('toss-receiver-name').value = '';
+  document.getElementById('toss-spinning').style.display = 'none';
+  _tossShowStep(1);
+  document.getElementById('modal-toss').classList.add('show');
+}
+
+function _tossShowStep(n) {
+  _toss.step = n;
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('toss-step-'+i);
+    if (el) el.style.display = (i === n) ? '' : 'none';
+  });
+}
+
+function tossPickTeam(side) {
+  document.getElementById('toss-btn-a').classList.toggle('selected', side==='a');
+  document.getElementById('toss-btn-b').classList.toggle('selected', side==='b');
+  // Short delay rồi chuyển step 2
+  setTimeout(() => _tossSetWinner(side), 350);
+}
+
+function tossRandom() {
+  const drum = document.getElementById('toss-drum');
+  const spin = document.getElementById('toss-spinning');
+  spin.style.display = 'block';
+  // Quay ngẫu nhiên qua các emoji
+  const emojis = ['🎾','🏓','🎲','⚡','🌀','🎯','🏆','✨'];
+  let i = 0, count = 0, total = 18 + Math.floor(Math.random()*12);
+  const iv = setInterval(() => {
+    drum.textContent = emojis[i++ % emojis.length];
+    count++;
+    if (count >= total) {
+      clearInterval(iv);
+      const winner = Math.random() < 0.5 ? 'a' : 'b';
+      // Highlight đội thắng
+      document.getElementById('toss-btn-'+winner).classList.add('selected');
+      setTimeout(() => _tossSetWinner(winner), 400);
+    }
+  }, 100);
+}
+
+function _tossSetWinner(side) {
+  _toss.winner = side;
+  const m = S.currentMatch;
+  const winName = side === 'a' ? sn(m.origTeamA||m.teamA) : sn(m.origTeamB||m.teamB);
+  document.getElementById('toss-winner-name').textContent = winName;
+  document.getElementById('toss-spinning').style.display = 'none';
+  _tossShowStep(2);
+}
+
+function tossChoose(choice) {
+  _toss.choice = choice;
+  document.querySelectorAll('.toss-choice-btn').forEach(b => b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  const m = S.currentMatch;
+  const winSide   = _toss.winner;
+  const loseSide  = winSide === 'a' ? 'b' : 'a';
+  const winTeam   = sn(winSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+  const loseTeam  = sn(loseSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+
+  if (choice === 'side') {
+    // Chọn sân → không cần nhập VĐV, giao bóng thuộc đội còn lại
+    _toss.serverSide = loseSide;
+    document.getElementById('toss-server-team-label').textContent = `Thuộc đội: ${loseTeam}`;
+    document.getElementById('toss-receiver-team-label').textContent = `Thuộc đội: ${winTeam}`;
+  } else if (choice === 'serve') {
+    _toss.serverSide = winSide;
+    document.getElementById('toss-server-team-label').textContent = `Thuộc đội: ${winTeam}`;
+    document.getElementById('toss-receiver-team-label').textContent = `Thuộc đội: ${loseTeam}`;
+  } else { // receive
+    _toss.serverSide = loseSide;
+    document.getElementById('toss-server-team-label').textContent = `Thuộc đội: ${loseTeam}`;
+    document.getElementById('toss-receiver-team-label').textContent = `Thuộc đội: ${winTeam}`;
+  }
+  setTimeout(() => _tossShowStep(3), 250);
+}
+
+function tossConfirmPlayers() {
+  _toss.serverName   = document.getElementById('toss-server-name').value.trim();
+  _toss.receiverName = document.getElementById('toss-receiver-name').value.trim();
+  // Tên VĐV optional — không bắt buộc
+  _tossBuildSummary();
+  _tossShowStep(4);
+}
+
+function _tossBuildSummary() {
+  const m = S.currentMatch;
+  const winSide  = _toss.winner;
+  const loseSide = winSide === 'a' ? 'b' : 'a';
+  const winTeam  = sn(winSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+  const loseTeam = sn(loseSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+  const serverTeam   = sn(_toss.serverSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+  const receiverTeam = sn(_toss.serverSide==='a' ? (m.origTeamB||m.teamB) : (m.origTeamA||m.teamA));
+
+  const choiceText = {serve:'Giao bóng trước', receive:'Đỡ giao bóng', side:'Chọn sân'}[_toss.choice];
+  const sideText   = winSide === 'a' ? 'Sân trái (A)' : 'Sân phải (B)';
+
+  let html = `🏆 <strong>Thắng bốc thăm:</strong> ${winTeam}<br>`;
+  html    += `🎯 <strong>Quyền chọn:</strong> ${choiceText}<br>`;
+  if (_toss.choice === 'side') {
+    html  += `⇄ <strong>Vị trí sân:</strong> ${winTeam} chọn sân<br>`;
+  }
+  html    += `<br>🏓 <strong>Giao bóng:</strong> ${_toss.serverName ? `<em>${_toss.serverName}</em> (${serverTeam})` : serverTeam}<br>`;
+  html    += `🛡 <strong>Đỡ bóng:</strong> ${_toss.receiverName ? `<em>${_toss.receiverName}</em> (${receiverTeam})` : receiverTeam}`;
+  document.getElementById('toss-summary').innerHTML = html;
+}
+
+function tossPrev() { _tossShowStep(Math.max(1, _toss.step - 1)); }
+
+function tossApply() {
+  const m = S.currentMatch;
+  if (!m) return;
+  // Thiết lập server: _toss.serverSide là 'a' hoặc 'b'
+  S.server = _toss.serverSide || 'a';
+  S.serveNum = 2;
+  S.isFirstServe = true;
+  render();
+
+  // Ghi log
+  const winTeam  = sn(_toss.winner==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+  const choiceText = {serve:'Giao bóng', receive:'Đỡ bóng', side:'Chọn sân'}[_toss.choice]||'';
+  const serverTeam = sn(_toss.serverSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+  const serverNote = _toss.serverName ? `${_toss.serverName} (${serverTeam})` : serverTeam;
+  const receiverNote = _toss.receiverName || '';
+
+  pushLog(`🎲 Bốc thăm: ${winTeam} thắng → ${choiceText}`, null);
+  pushLog(`🏓 Giao bóng: ${serverNote}${receiverNote?' · 🛡 Đỡ: '+_toss.receiverName:''}`, null);
+  logToGS(`🎲 Bốc thăm: ${winTeam} → ${choiceText} · GBóng: ${serverNote}`, '');
+
+  closeModal('modal-toss');
+  // Tự động bắt đầu
+  startMatch();
+  toast(`🎲 Bốc thăm xong! ${serverNote} giao bóng trước`, 4000);
+}
 let _lastMatchCount = 0;
 let _pollInterval   = null;
 let _appFocused     = !document.hidden;
