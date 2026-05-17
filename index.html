@@ -348,7 +348,8 @@ select, input { font-family: inherit; }
        alt="Da Nang Referee">
   <div style="line-height:1.2">
     <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:var(--green-dk);letter-spacing:.3px">Referee Pickleball</div>
-    <div style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:500;color:var(--g500);letter-spacing:.5px;text-transform:uppercase">Da Nang</div>
+    <div style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:500;color:var(--g500);letter-spacing:.5px;text-transform:uppercase">Da Nang <span style="font-size:13px;font-weight:700;color:var(--green-dk)">&reg;</span></div>
+    <div style="font-size:8px;color:var(--g400);letter-spacing:.3px;margin-top:1px">by Team Trọng Tài Pickleball Đà Nẵng CBKQ</div>
   </div>
 </div>
   <div class="hdr-right">
@@ -726,6 +727,11 @@ select, input { font-family: inherit; }
     <!-- Hướng dẫn -->
     <details style="margin-top:4px">
       <summary style="font-size:11px;color:var(--g400);cursor:pointer">📖 Hướng dẫn setup camera điện thoại</summary>
+      <div style="font-size:11px;color:var(--g500);padding-top:8px;line-height:1.7">
+        <strong>📡 IP Webcam (cùng WiFi):</strong> Cài app "IP Webcam" (Android) → Start server → nhập URL http://IP:8080<br>
+        <strong>🎥 Jitsi Meet (qua internet):</strong> Vào <code>meet.jit.si</code> → tạo phòng (VD: <em>PBDaNangSan1</em>) → dán link vào đây → bấm "🔗 Mở tab mới"<br>
+        <strong>▶️ YouTube Live:</strong> Nhập link stream YouTube trực tiếp
+      </div>
       <div style="margin-top:8px;font-size:11.5px;color:var(--g600);line-height:1.8;background:var(--g50);border-radius:8px;padding:10px 12px">
         <strong>Cách 1 – YouTube Live (xem được từ xa, miễn phí):</strong><br>
         1. Mở YouTube app → nhấn <strong>＋ → Live</strong><br>
@@ -2874,7 +2880,8 @@ function removeCamera(court) {
 function detectCamType(url) {
   if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
   if (url.includes('facebook.com') || url.includes('fb.watch')) return 'facebook';
-  return 'ipwebcam'; // IP Webcam hoặc link trực tiếp
+  if (url.includes('meet.jit.si') || url.includes('jitsi')) return 'jitsi';
+  return 'ipwebcam';
 }
 
 function getEmbedUrl(cam) {
@@ -2903,23 +2910,31 @@ function renderCameraList() {
     list.innerHTML = '<div class="empty-msg">Chưa có camera. Thêm sân bên dưới.</div>';
     return;
   }
-  list.innerHTML = cameraList.map(c => `
+  list.innerHTML = cameraList.map(c => {
+    const icon  = c.type==='youtube'?'▶️':c.type==='facebook'?'📘':c.type==='jitsi'?'🎥':'📡';
+    const label = c.type==='youtube'?'YouTube Live':c.type==='facebook'?'Facebook Live':c.type==='jitsi'?'Jitsi Meet (tab mới)':'IP Webcam';
+    const btnLabel = c.type==='jitsi' ? '🔗 Mở tab mới' : '📺 Xem';
+    const btnAction = c.type==='jitsi'
+      ? `window.open('${c.url}','_blank')`
+      : `openCamera('${c.court}')`;
+    return `
     <div style="display:flex;align-items:center;gap:8px;background:var(--g50);border:1.5px solid var(--g200);border-radius:10px;padding:8px 10px">
-      <div style="font-size:18px">${c.type==='youtube'?'▶️':c.type==='facebook'?'📘':'📡'}</div>
+      <div style="font-size:18px">${icon}</div>
       <div style="flex:1;min-width:0">
         <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--green-dk)">${c.court}</div>
         <div style="font-size:10.5px;color:var(--g400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.url}</div>
-        <div style="font-size:10px;color:var(--g500);margin-top:1px">${c.type==='youtube'?'YouTube Live':c.type==='facebook'?'Facebook Live':'IP Webcam'}</div>
+        <div style="font-size:10px;color:var(--g500);margin-top:1px">${label}</div>
       </div>
-      <button onclick="openCamera('${c.court}')"
-        style="background:var(--green);color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
-        📺 Xem
+      <button onclick="${btnAction}"
+        style="background:${c.type==='jitsi'?'#2563eb':'var(--green)'};color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+        ${btnLabel}
       </button>
       <button onclick="removeCamera('${c.court}')"
         style="background:var(--red-bg);color:var(--red);border:1.5px solid #fecaca;border-radius:8px;padding:7px 8px;font-size:12px;cursor:pointer">
         ✕
       </button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   // Cập nhật nav trong modal
   renderCamNav();
@@ -2938,29 +2953,29 @@ function renderCamNav() {
 function openCamera(court) {
   const cam = cameraList.find(c => c.court === court);
   if (!cam) return;
-  currentCamUrl = cam.url;
 
+  // Jitsi không nhúng được iframe → mở tab mới
+  if (cam.type === 'jitsi') {
+    window.open(cam.url, '_blank');
+    return;
+  }
+
+  currentCamUrl = cam.url;
   document.getElementById('cam-modal-title').textContent = `📹 ${cam.court}`;
   document.getElementById('cam-loading').style.display = 'flex';
 
   const container = document.getElementById('cam-container');
-  // Xoá player cũ
   const old = container.querySelector('iframe, img');
   if (old) old.remove();
 
   let player;
   if (cam.type === 'ipwebcam') {
-    // IP Webcam: dùng thẻ img MJPEG stream
     player = document.createElement('img');
     player.src = cam.url.replace(/\/$/, '') + '/video';
     player.style.cssText = 'width:100%;height:100%;object-fit:contain;position:absolute;inset:0';
     player.onload = () => { document.getElementById('cam-loading').style.display = 'none'; };
-    player.onerror = () => {
-      // Fallback: thử URL gốc
-      player.src = cam.url;
-    };
+    player.onerror = () => { player.src = cam.url; };
   } else {
-    // YouTube / Facebook: dùng iframe
     player = document.createElement('iframe');
     player.src = getEmbedUrl(cam);
     player.style.cssText = 'width:100%;height:100%;border:none;position:absolute;inset:0';
