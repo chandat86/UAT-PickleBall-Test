@@ -664,70 +664,90 @@ select, input { font-family: inherit; }
   <button class="ctrl-btn reset" onclick="resetMatch()">↺ Reset</button>
 </div>
 <div id="toss-bar" style="display:none;margin-top:6px">
-  <!-- Panel trước khi bắt đầu -->
-  <div id="prematch-panel" style="background:var(--card);border-radius:12px;border:1.5px solid var(--g200);padding:10px 12px">
+  <div id="prematch-panel" style="background:var(--card);border-radius:14px;border:1.5px solid var(--g200);overflow:hidden;box-shadow:var(--sh)">
 
-    <!-- Tiêu đề -->
-    <div style="font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;text-align:center">
-      🏓 Thiết lập trước trận
+    <!-- Header gradient -->
+    <div style="background:linear-gradient(90deg,#0369a1,#0891b2);padding:8px 14px;display:flex;align-items:center;gap:6px">
+      <span style="font-size:14px">🏓</span>
+      <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:#fff;letter-spacing:.3px">THIẾT LẬP TRƯỚC TRẬN</span>
     </div>
 
-    <!-- Chọn đội giao bóng trước -->
-    <div style="margin-bottom:8px">
-      <div style="font-size:10px;font-weight:600;color:var(--g600);margin-bottom:4px">Đội giao bóng đầu tiên:</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-        <button id="pm-srv-a" onclick="pmSetServer('a')"
-          style="border:2px solid var(--g200);background:var(--g50);border-radius:8px;padding:6px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s;line-height:1.3">
-          <div id="pm-srv-a-name" style="font-size:9px;color:var(--g500)">Đội A</div>
-          Giao trước
-        </button>
-        <button id="pm-srv-b" onclick="pmSetServer('b')"
-          style="border:2px solid var(--g200);background:var(--g50);border-radius:8px;padding:6px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s;line-height:1.3">
-          <div id="pm-srv-b-name" style="font-size:9px;color:var(--g500)">Đội B</div>
-          Giao trước
-        </button>
+    <div style="padding:10px 12px;display:flex;flex-direction:column;gap:10px">
+
+      <!-- 1. Đội giao bóng -->
+      <div>
+        <div style="font-size:9.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">① Đội giao bóng đầu tiên</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <button id="pm-srv-a" onclick="pmSetServer('a')"
+            style="border:2px solid var(--g200);background:var(--g50);border-radius:10px;padding:8px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s;text-align:center;line-height:1.4">
+            <div style="font-size:8.5px;font-weight:600;color:var(--g400);margin-bottom:2px" id="pm-srv-a-name">Đội A</div>
+            🏓 Giao trước
+          </button>
+          <button id="pm-srv-b" onclick="pmSetServer('b')"
+            style="border:2px solid var(--g200);background:var(--g50);border-radius:10px;padding:8px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s;text-align:center;line-height:1.4">
+            <div style="font-size:8.5px;font-weight:600;color:var(--g400);margin-bottom:2px" id="pm-srv-b-name">Đội B</div>
+            🏓 Giao trước
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- Chọn người giao đầu tiên (hiện sau khi chọn đội) -->
-    <div id="pm-player-row" style="display:none;margin-bottom:8px">
-      <div style="font-size:10px;font-weight:600;color:var(--g600);margin-bottom:4px">Người giao bóng đầu tiên:</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-        <button id="pm-p0" onclick="pmSetServerPlayer(0)"
-          style="border:2px solid var(--g200);background:var(--g50);border-radius:8px;padding:5px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s">
-          <span id="pm-p0-name">VĐV 1</span>
-        </button>
-        <button id="pm-p1" onclick="pmSetServerPlayer(1)"
-          style="border:2px solid var(--g200);background:var(--g50);border-radius:8px;padding:5px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s">
-          <span id="pm-p1-name">VĐV 2</span>
-        </button>
+      <!-- 2. Giao / Đỡ bóng -->
+      <div id="pm-player-row" style="display:none">
+        <div style="font-size:9.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">② Người giao &amp; đỡ bóng</div>
+        <div style="display:grid;grid-template-columns:1fr 14px 1fr;align-items:start;gap:4px">
+          <!-- Giao bóng -->
+          <div style="background:#f0f9ff;border:1.5px solid #0891b2;border-radius:9px;padding:6px 5px">
+            <div style="font-size:8px;font-weight:700;color:#0369a1;text-align:center;margin-bottom:4px;text-transform:uppercase">🏓 Giao bóng</div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <button id="pm-p0" onclick="pmSetServerPlayer(0)"
+                style="border:1.5px solid var(--g200);background:#fff;border-radius:6px;padding:4px 3px;font-size:9px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s;line-height:1.3;text-align:center">
+                <span id="pm-p0-name">VĐV 1</span>
+              </button>
+              <button id="pm-p1" onclick="pmSetServerPlayer(1)"
+                style="border:1.5px solid var(--g200);background:#fff;border-radius:6px;padding:4px 3px;font-size:9px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s;line-height:1.3;text-align:center">
+                <span id="pm-p1-name">VĐV 2</span>
+              </button>
+            </div>
+          </div>
+          <!-- Arrow -->
+          <div style="display:flex;align-items:center;justify-content:center;padding-top:22px;font-size:12px;color:var(--g400)">↔</div>
+          <!-- Đỡ bóng (auto Ô1 đội kia) -->
+          <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:9px;padding:6px 5px">
+            <div style="font-size:8px;font-weight:700;color:#15803d;text-align:center;margin-bottom:4px;text-transform:uppercase">🛡 Đỡ bóng (Ô1)</div>
+            <div id="pm-rcv-name" style="background:#dcfce7;border:1.5px solid #86efac;border-radius:6px;padding:5px 3px;font-size:9px;font-weight:700;color:#15803d;text-align:center;line-height:1.3;min-height:30px;display:flex;align-items:center;justify-content:center">–</div>
+            <div style="font-size:8px;color:var(--g400);text-align:center;margin-top:2px">Tự động Ô1</div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Hoán đổi VĐV lên xuống (Ô1 ↔ Ô2) cho mỗi đội -->
-    <div style="margin-bottom:8px">
-      <div style="font-size:10px;font-weight:600;color:var(--g600);margin-bottom:4px">Hoán đổi vị trí VĐV:</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-        <button onclick="pmSwapPlayers('a')"
-          style="border:1.5px solid #0891b2;background:#e0f2fe;border-radius:8px;padding:5px 4px;font-size:10px;font-weight:700;color:#0369a1;cursor:pointer">
-          ↕ Đổi VĐV<br><span style="font-size:9px;font-weight:600" id="pm-swap-a-label">Đội A</span>
-        </button>
-        <button onclick="pmSwapPlayers('b')"
-          style="border:1.5px solid #0891b2;background:#e0f2fe;border-radius:8px;padding:5px 4px;font-size:10px;font-weight:700;color:#0369a1;cursor:pointer">
-          ↕ Đổi VĐV<br><span style="font-size:9px;font-weight:600" id="pm-swap-b-label">Đội B</span>
-        </button>
+      <!-- 3. Hoán đổi vị trí -->
+      <div>
+        <div style="font-size:9.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">③ Hoán đổi vị trí VĐV (Ô1↔Ô2)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <button onclick="pmSwapPlayers('a')"
+            style="border:1.5px solid #0891b2;background:#e0f2fe;border-radius:9px;padding:7px 4px;font-size:10px;font-weight:700;color:#0369a1;cursor:pointer;line-height:1.4;text-align:center;transition:all .15s">
+            ↕ Đổi Ô<br><span style="font-size:8.5px" id="pm-swap-a-label">Đội A</span>
+          </button>
+          <button onclick="pmSwapPlayers('b')"
+            style="border:1.5px solid #0891b2;background:#e0f2fe;border-radius:9px;padding:7px 4px;font-size:10px;font-weight:700;color:#0369a1;cursor:pointer;line-height:1.4;text-align:center;transition:all .15s">
+            ↕ Đổi Ô<br><span style="font-size:8.5px" id="pm-swap-b-label">Đội B</span>
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- Hoặc bốc thăm -->
-    <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-      <div style="flex:1;height:1px;background:var(--g200)"></div>
-      <span style="font-size:9px;color:var(--g400)">hoặc</span>
-      <div style="flex:1;height:1px;background:var(--g200)"></div>
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;height:1px;background:var(--g200)"></div>
+        <span style="font-size:9px;color:var(--g400);font-weight:600">hoặc bốc thăm</span>
+        <div style="flex:1;height:1px;background:var(--g200)"></div>
+      </div>
+
+      <button onclick="openTossModal()"
+        style="width:100%;border:2px dashed var(--green-bd);background:var(--green-bg);color:var(--green-dk);border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+        🎲 Bốc thăm chọn quyền
+      </button>
+
     </div>
-    <button onclick="openTossModal()" style="width:100%;margin-top:6px;border:2px dashed var(--green-bd);background:var(--green-bg);color:var(--green-dk);border-radius:10px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
-      🎲 Bốc thăm chọn quyền
-    </button>
   </div>
 </div>
 
@@ -1292,6 +1312,11 @@ function startTimer(type, side) {
     ? sn(side==='a'?S.currentMatch.teamA:S.currentMatch.teamB)
     : (side==='a'?'Đội A':'Đội B');
 
+  // Tăng counter
+  if (type === 'timeout') S.timeouts[side]++;
+  else                    S.medicals[side]++;
+  _updateTimerBtnLabels();
+
   timerTotal = type === 'timeout' ? 60 : 300;
   timerRemaining = timerTotal;
   timerPaused = false;
@@ -1845,10 +1870,11 @@ let S = {
   serverPlayerIdx: 0,
   playersA: ['', ''],
   playersB: ['', ''],
-  // posA[0]=playerDataIdx ở Ô1 đội A (bot), posA[1]=Ô2 đội A (top)
-  // posB[0]=playerDataIdx ở Ô1 đội B (top), posB[1]=Ô2 đội B (bot)
   posA: [0, 1],
   posB: [0, 1],
+  // Đếm lần dùng T/O và Medical mỗi đội
+  timeouts:  { a:0, b:0 },
+  medicals:  { a:0, b:0 },
 };
 try { S.results = JSON.parse(localStorage.getItem('pb_res6')||'{}'); } catch(e){}
 let evLog = [];
@@ -1871,6 +1897,7 @@ function render() {
   checkWin();
   checkAutoSwap();
   updateTossBar();
+  _updateTimerBtnLabels();
 }
 
 // ── Render serve badge trung tâm + trạng thái nút đổi ──
@@ -2086,7 +2113,7 @@ function checkAutoSwap() {
   if (!swapNotified && hi >= swapAt) {
     swapNotified = true;
 
-    // TỰ ĐỘNG đổi sân ngay — không cần bấm nút
+    // TỰ ĐỘNG đổi sân
     [S.a, S.b] = [S.b, S.a];
     S.server = S.server === 'a' ? 'b' : 'a';
     if (S.currentMatch) {
@@ -2098,7 +2125,7 @@ function checkAutoSwap() {
     }
     [S.posA, S.posB] = [S.posB, S.posA];
 
-    // Hiển thị thông báo + rung
+    // Thông báo + rung
     if (notice) {
       const txt = notice.querySelector('#swap-notice-txt');
       if (txt) txt.textContent = `⇄ ĐÃ ĐỔI SÂN (${swapAt} điểm)`;
@@ -2108,6 +2135,10 @@ function checkAutoSwap() {
       notice._hideTimer = setTimeout(() => notice.classList.remove('show'), 4000);
     }
     pushLog(`⇄ TỰ ĐỘNG ĐỔI SÂN (${swapAt} điểm)`, null);
+
+    // Gọi render lại để UI phản ánh vị trí mới ngay lập tức
+    // (dùng setTimeout 0 để tránh đệ quy vì checkAutoSwap đang trong render())
+    setTimeout(() => render(), 0);
   }
 }
 
@@ -2506,6 +2537,7 @@ function nextGame() {
   S.game++; S.a=0; S.b=0; S.history=[];
   S.serveNum=2; S.isFirstServe=true; S.serverPlayerIdx=0;
   S.posA=[0,1]; S.posB=[0,1];
+  S.timeouts={a:0,b:0}; S.medicals={a:0,b:0};
   swapNotified=false;
   document.getElementById('swap-notice').classList.remove('show');
   pushLog(`▶ Game ${S.game} bắt đầu — 0-0-2`, null);
@@ -2759,6 +2791,7 @@ function loadMatch(idx) {
   }
   S.game=1; S.server='a'; S.serveNum=2; S.isFirstServe=true; S.history=[];
   S.serverPlayerIdx=0; S.posA=[0,1]; S.posB=[0,1];
+  S.timeouts={a:0,b:0}; S.medicals={a:0,b:0};
   _pm.serverSide = null; _pm.serverPlayerIdx = 0;
   swapNotified=false;
   const snotice = document.getElementById('swap-notice');
@@ -2925,11 +2958,20 @@ function updatePrematchPanel() {
   if (playerRow) playerRow.style.display = _pm.serverSide ? '' : 'none';
 
   if (_pm.serverSide) {
+    const rcvSide   = _pm.serverSide === 'a' ? 'b' : 'a';
+    const rcvPlayers = rcvSide === 'a' ? playersA : playersB;
     const srvPlayers = _pm.serverSide === 'a' ? playersA : playersB;
     const p0 = document.getElementById('pm-p0-name');
     const p1 = document.getElementById('pm-p1-name');
     if (p0) p0.textContent = srvPlayers[0] || 'VĐV 1';
     if (p1) p1.textContent = srvPlayers[1] || 'VĐV 2';
+
+    // Người đỡ bóng = người ở Ô1 đội nhận (posB[0] hoặc posA[0])
+    const rcvPos = rcvSide === 'a' ? S.posA : S.posB;
+    const rcvIdx = rcvPos[0]; // Ô1 = index 0 trong pos array
+    const rcvName = rcvPlayers[rcvIdx] || `VĐV ${rcvIdx+1}`;
+    const rcvEl = document.getElementById('pm-rcv-name');
+    if (rcvEl) rcvEl.textContent = rcvName;
 
     // Highlight người giao đang chọn
     const b0 = document.getElementById('pm-p0');
@@ -3928,7 +3970,26 @@ function _renderCourtPermBadge(allowedCount) {
   `;
 }
 
-// Kiểm tra trận có nằm trong quyền của trọng tài không
+// Cập nhật label nút T/O và Med với số lần đã dùng
+function _updateTimerBtnLabels() {
+  const map = [
+    { el: document.querySelector('#card-a .ex-btn.timeout'), key:'a', type:'timeout' },
+    { el: document.querySelector('#card-a .ex-btn.medical'), key:'a', type:'medical' },
+    { el: document.querySelector('#card-b .ex-btn.timeout'), key:'b', type:'timeout' },
+    { el: document.querySelector('#card-b .ex-btn.medical'), key:'b', type:'medical' },
+  ];
+  map.forEach(({el, key, type}) => {
+    if (!el) return;
+    const count = type === 'timeout' ? S.timeouts[key] : S.medicals[key];
+    const label = type === 'timeout' ? '⏱ T/O' : '🏥 Med';
+    el.textContent = count > 0 ? `${label} (${count})` : label;
+    // Màu đỏ nhẹ nếu đã dùng nhiều
+    if (type === 'timeout') {
+      el.style.background = count >= 2 ? '#fecaca' : '#fef3c7';
+      el.style.color      = count >= 2 ? '#991b1b' : '#92400e';
+    }
+  });
+}
 function _matchAllowed(m) {
   if (_userPerm.isAdmin) return true;
   if (!_userPerm.courts.length && !_userPerm.rounds.length) return true;
