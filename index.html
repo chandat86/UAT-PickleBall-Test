@@ -3821,6 +3821,23 @@ function licEnter() {
   document.getElementById('license-screen').style.display = 'none';
   const saved = licLoad();
   if (saved) _applyPerm(saved);
+
+  if (GS_URL) {
+    // Hiển thị trạng thái đang tải nếu chưa có dữ liệu
+    if (!matchList.length) {
+      const grid = document.getElementById('match-grid');
+      if (grid) grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--g500)">
+          <div style="font-size:22px;margin-bottom:6px">⏳</div>
+          <div style="font-size:12px;font-weight:600">Đang tải dữ liệu từ GSheets...</div>
+        </div>`;
+    }
+    // Tự động tải dữ liệu từ GSheets ngay sau khi vào app
+    setTimeout(async () => {
+      await loadAllFromGS();
+      startAutoPoll();
+    }, 400);
+  }
 }
 
 async function licCheckOnStart() {
@@ -3843,6 +3860,7 @@ async function licCheckOnStart() {
 
     const sinceCheck = Date.now() - (saved.checkedAt||0);
     if (sinceCheck < LIC_CHECK_MS) {
+      // Cache còn mới — vào thẳng, sync GSheets ngầm (licEnter đã xử lý)
       _applyPerm(saved);
       licEnter();
       return;
@@ -3865,7 +3883,7 @@ async function licCheckOnStart() {
           screen.style.display = 'flex';
         }
       } catch(e) {
-        // Lỗi mạng → offline grace
+        // Lỗi mạng → offline grace, vẫn tự sync nếu có cache matchList
         _applyPerm(saved);
         licEnter();
         return;
@@ -3898,17 +3916,16 @@ renderCameraList();
 
 // Lắng nghe thay đổi filter
 document.getElementById('sel-noidung').addEventListener('change', () => {
-  // Reset bảng về -- Chọn bảng -- khi đổi nội dung
   const bangSel = document.getElementById('sel-bang');
   if (bangSel) bangSel.value = '';
   renderMatchGrid();
+  // Nếu vừa chọn nội dung mà matchList trống → tự động tải lại
+  if (GS_URL && !matchList.length) loadAllFromGS();
 });
 document.getElementById('sel-bang').addEventListener('change', renderMatchGrid);
 
-// Làm mới từ GSheets ngầm
-if (GS_URL) setTimeout(async () => { await loadAllFromGS(); startAutoPoll(); }, 300);
-
-// Kiểm tra license khi khởi động
+// Khởi động: licCheckOnStart sẽ gọi licEnter → loadAllFromGS + startAutoPoll
+// Nếu không có license (GS_URL không cần login) → load trực tiếp
 licCheckOnStart();
 </script>
 <!-- ── LICENSE SCREEN ── -->
