@@ -1340,20 +1340,25 @@ async function loadAllFromGS() {
   let gotMatches = false;
 
   // ── Xử lý Matches: NGUỒN SỰ THẬT DUY NHẤT cho tên đội + điểm ──
+  // Header mới: [0]Nội dung [1]Bảng [2]Mã [3]ĐộiA [4]ĐiểmA [5]ĐiểmB [6]ĐộiB [7]Sân [8]VòngĐấu [9]GhiChú
   if (matchData?.rows?.length > 1) {
     const newMatches = [];
     matchData.rows.slice(1).forEach(r => {
-      const nd   = String(r[0]||'').trim();
-      const bang = String(r[1]||'').trim();
-      const code = String(r[2]||'').trim();
-      const tA   = String(r[3]||'').trim();
-      const tB   = String(r[6]||'').trim();
-      // Điểm A/B từ Matches (GAS điền vào sau khi lưu kết quả)
-      const sA   = (r[4] !== '' && r[4] !== null && r[4] !== undefined) ? Number(r[4]) : null;
-      const sB   = (r[5] !== '' && r[5] !== null && r[5] !== undefined) ? Number(r[5]) : null;
+      const nd    = String(r[0]||'').trim();
+      const bang  = String(r[1]||'').trim();
+      const code  = String(r[2]||'').trim();
+      const tA    = String(r[3]||'').trim();
+      const tB    = String(r[6]||'').trim();
+      const sA    = (r[4]!==''&&r[4]!==null&&r[4]!==undefined) ? Number(r[4]) : null;
+      const sB    = (r[5]!==''&&r[5]!==null&&r[5]!==undefined) ? Number(r[5]) : null;
+      const court = String(r[7]||'').trim(); // Sân
+      const round = String(r[8]||'').trim(); // Vòng đấu
       if (!nd || !code) return;
       const key = `${nd}|${bang}|${code}`;
-      newMatches.push({ noidung:nd, bang, code, teamA:tA, teamB:tB, matchScoreA:sA, matchScoreB:sB, key });
+      newMatches.push({ noidung:nd, bang, code, teamA:tA, teamB:tB,
+                        matchScoreA:sA, matchScoreB:sB,
+                        court, round, // phân quyền
+                        key });
     });
     matchList = newMatches;
     saveMatchList();
@@ -1772,12 +1777,13 @@ function renderMatchGrid() {
     return;
   }
 
-  // Lọc theo nội dung + bảng (bảng optional)
+  // Lọc theo nội dung + bảng + quyền trọng tài (sân/vòng)
   const filtered = matchList.filter(m => {
     const nd   = (m.noidung || '').trim();
     const bang = (m.bang    || '').trim();
-    return (!filterND   || nd   === filterND)
-        && (!filterBang || bang === filterBang);
+    const ndOk   = !filterND   || nd   === filterND;
+    const bangOk = !filterBang || bang === filterBang;
+    return ndOk && bangOk && _matchAllowed(m);
   });
 
   badge.textContent = filtered.length;
@@ -1874,7 +1880,11 @@ function renderMatchGrid() {
         `<span class="mc" style="margin-bottom:0">${m.code || '?'}</span>` +
         `<span style="${statusStyle}">${statusLabel}</span>` +
       `</div>` +
-      `<div style="font-size:9px;color:var(--g400);margin-bottom:4px">${m.noidung||''}${m.bang?' · '+m.bang:''}</div>` +
+      `<div style="font-size:9px;color:var(--g400);margin-bottom:4px;display:flex;flex-wrap:wrap;gap:3px;align-items:center">` +
+        `<span>${m.noidung||''}${m.bang?' · '+m.bang:''}</span>` +
+        (m.court?`<span style="color:var(--green-dk);font-weight:600">· ${m.court}</span>`:'') +
+        (m.round?`<span style="color:var(--amber-dk)">· ${m.round}</span>`:'') +
+      `</div>` +
       // Đội A — tên wrap, điểm cố định bên phải align top
       `<div style="display:flex;align-items:flex-start;gap:4px;margin-bottom:4px">` +
         `<span style="font-size:11px;font-weight:${winA?'700':'500'};color:${winA?'var(--green-dk)':'var(--g700)'};flex:1;min-width:0;line-height:1.35">${sn(m.teamA)}</span>` +
@@ -2673,15 +2683,17 @@ async function pollMatches() {
 
     const newCount = data.rows.length - 1;
 
-    // Parse data mới
+    // Parse data mới (header: [0]ND [1]Bảng [2]Mã [3]ĐộiA [4]ĐiểmA [5]ĐiểmB [6]ĐộiB [7]Sân [8]Vòng [9]GhiChú)
     const newMatches = [];
     data.rows.slice(1).forEach(r => {
       const nd=String(r[0]||'').trim(), bang=String(r[1]||'').trim(), code=String(r[2]||'').trim();
       const tA=String(r[3]||'').trim(), tB=String(r[6]||'').trim();
       const sA=(r[4]!==''&&r[4]!=null) ? Number(r[4]) : null;
       const sB=(r[5]!==''&&r[5]!=null) ? Number(r[5]) : null;
+      const court=String(r[7]||'').trim();
+      const round=String(r[8]||'').trim();
       if (!nd||!code) return;
-      newMatches.push({noidung:nd,bang,code,teamA:tA,teamB:tB,matchScoreA:sA,matchScoreB:sB,key:`${nd}|${bang}|${code}`});
+      newMatches.push({noidung:nd,bang,code,teamA:tA,teamB:tB,matchScoreA:sA,matchScoreB:sB,court,round,key:`${nd}|${bang}|${code}`});
     });
 
     // So sánh thông minh: check số lượng, bảng, nội dung VÀ điểm số
@@ -3188,10 +3200,15 @@ function toast(msg, duration) {
 }
 
 // ══════════════════════════════════════════
-//  LICENSE SYSTEM
+//  USER / PERMISSION SYSTEM
 // ══════════════════════════════════════════
 const LIC_KEY      = 'pb_license_v1';
 const LIC_CHECK_MS = 6 * 60 * 60 * 1000; // re-validate mỗi 6 giờ
+
+// Quyền hiện tại của trọng tài đang đăng nhập
+// courts: [] = tất cả sân | ['Sân 1','Sân 2'] = chỉ các sân này
+// rounds: [] = tất cả vòng | ['Vòng bảng','Tứ kết'] = chỉ vòng này
+let _userPerm = { courts: [], rounds: [], isAdmin: false, name: '', code: '' };
 
 function _deviceId() {
   let id = localStorage.getItem('pb_device_id');
@@ -3210,14 +3227,84 @@ function licSave(data) {
   localStorage.setItem(LIC_KEY, JSON.stringify({...data, checkedAt: Date.now()}));
 }
 
-function licClear() {
-  localStorage.removeItem(LIC_KEY);
+function licClear() { localStorage.removeItem(LIC_KEY); }
+
+function _applyPerm(data) {
+  _userPerm = {
+    courts:  Array.isArray(data.courts)  ? data.courts  : [],
+    rounds:  Array.isArray(data.rounds)  ? data.rounds  : [],
+    isAdmin: !!data.isAdmin,
+    name:    data.name || data.code || '',
+    code:    data.code || '',
+  };
+  // Auto-fill tên trọng tài
+  const refInput = document.getElementById('inp-referee');
+  if (refInput && data.name && !refInput.value) refInput.value = data.name;
+  // Re-render match grid với filter mới
+  renderMatchGrid();
+  _updatePermBadge();
+}
+
+function _updatePermBadge() {
+  const saved = licLoad();
+  if (!saved?.name) return;
+  const hdr = document.querySelector('.hdr-right');
+  if (!hdr) return;
+  let badge = document.getElementById('lic-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'lic-badge';
+    badge.style.cssText = 'font-size:10px;background:var(--green-bg);border:1px solid var(--green-bd);border-radius:20px;padding:3px 8px;color:var(--green-dk);font-weight:600;white-space:nowrap;cursor:pointer;max-width:150px;overflow:hidden;text-overflow:ellipsis';
+    badge.onclick = () => {
+      const info = [
+        `👤 ${saved.name}`,
+        `Mã: ${saved.code}`,
+        `Hết hạn: ${saved.expire}`,
+        `Sân: ${_userPerm.courts.length ? _userPerm.courts.join(', ') : 'Tất cả'}`,
+        `Vòng: ${_userPerm.rounds.length ? _userPerm.rounds.join(', ') : 'Tất cả'}`,
+        _userPerm.isAdmin ? '🔑 Quyền Admin' : '',
+      ].filter(Boolean).join('\n');
+      if (confirm(info + '\n\nĐăng xuất?')) { licClear(); location.reload(); }
+    };
+    hdr.insertBefore(badge, hdr.firstChild);
+  }
+  const courtStr = _userPerm.courts.length ? ` · ${_userPerm.courts.join('/')}` : '';
+  badge.textContent = `👤 ${saved.name}${courtStr}`;
+  badge.title = `Mã: ${saved.code} · HH: ${saved.expire}`;
+}
+
+// Kiểm tra trận có nằm trong quyền của trọng tài không
+function _matchAllowed(m) {
+  if (_userPerm.isAdmin) return true; // admin thấy tất cả
+
+  // Lọc theo sân
+  if (_userPerm.courts.length > 0) {
+    const matchCourt = (m.court || m.san || '').trim();
+    if (!matchCourt) return false; // trận chưa có sân → ẩn
+    const ok = _userPerm.courts.some(c =>
+      matchCourt.toLowerCase().includes(c.toLowerCase()) ||
+      c.toLowerCase().includes(matchCourt.toLowerCase())
+    );
+    if (!ok) return false;
+  }
+
+  // Lọc theo vòng đấu
+  if (_userPerm.rounds.length > 0) {
+    const matchRound = (m.round || m.vongdau || '').trim();
+    if (!matchRound) return true; // trận chưa ghi vòng → hiện (linh hoạt)
+    const ok = _userPerm.rounds.some(r =>
+      matchRound.toLowerCase().includes(r.toLowerCase()) ||
+      r.toLowerCase().includes(matchRound.toLowerCase())
+    );
+    if (!ok) return false;
+  }
+
+  return true;
 }
 
 async function licValidate() {
   const inp  = document.getElementById('lic-inp');
   const btn  = document.getElementById('lic-btn');
-  const stat = document.getElementById('lic-status');
   const code = inp.value.trim().toUpperCase();
 
   if (!code) { _licStatus('err', '⚠️ Nhập mã trước!'); return; }
@@ -3228,14 +3315,19 @@ async function licValidate() {
   inp.classList.remove('error');
 
   try {
-    const url = `${GS_URL}?action=validate&code=${encodeURIComponent(code)}&device=${encodeURIComponent(_deviceId())}`;
+    const url  = `${GS_URL}?action=validate&code=${encodeURIComponent(code)}&device=${encodeURIComponent(_deviceId())}`;
     const res  = await fetch(url, {cache:'no-store'});
     const data = await res.json();
 
     if (data.ok && data.valid) {
-      licSave({code, name: data.name, expire: data.expire});
-      _licStatus('ok', `✅ Hợp lệ — ${data.name} · HH: ${data.expire}`);
-      setTimeout(licEnter, 900);
+      licSave({ code, name: data.name, expire: data.expire,
+                courts: data.courts, rounds: data.rounds, isAdmin: data.isAdmin });
+      _applyPerm(data);
+
+      const courtInfo = data.courts?.length ? `Sân: ${data.courts.join(', ')}` : 'Tất cả sân';
+      const roundInfo = data.rounds?.length ? `Vòng: ${data.rounds.join(', ')}` : 'Tất cả vòng';
+      _licStatus('ok', `✅ ${data.name} · ${courtInfo} · ${roundInfo}`);
+      setTimeout(licEnter, 1000);
     } else {
       inp.classList.add('error');
       _licStatus('err', `❌ ${data.reason||'Mã không hợp lệ'}`);
@@ -3255,58 +3347,65 @@ function _licStatus(type, msg) {
 
 function licEnter() {
   document.getElementById('license-screen').style.display = 'none';
+  const saved = licLoad();
+  if (saved) _applyPerm(saved);
 }
 
 async function licCheckOnStart() {
-  const saved = licLoad();
+  const saved  = licLoad();
   const screen = document.getElementById('license-screen');
   const inp    = document.getElementById('lic-inp');
   const savedBox = document.getElementById('lic-saved-box');
   const btn    = document.getElementById('lic-btn');
 
   if (saved) {
-    // Hiện thông tin đã lưu
     savedBox.style.display = 'block';
-    document.getElementById('lic-saved-name').textContent = `🏓 ${saved.name||saved.code}`;
-    document.getElementById('lic-saved-exp').textContent  = `Hết hạn: ${saved.expire} · Mã: ${saved.code}`;
+    const courtStr = saved.courts?.length ? saved.courts.join(', ') : 'Tất cả sân';
+    const roundStr = saved.rounds?.length ? saved.rounds.join(', ') : 'Tất cả vòng';
+    document.getElementById('lic-saved-name').textContent = `👤 ${saved.name||saved.code}`;
+    document.getElementById('lic-saved-exp').textContent  =
+      `Mã: ${saved.code} · HH: ${saved.expire} · ${courtStr} · ${roundStr}`;
     inp.value = saved.code;
-    btn.textContent = '↺ Đăng nhập lại';
+    btn.textContent = '▶ Vào app';
+    btn.style.background = '#16a34a';
 
-    // Nếu chưa đến lúc check lại → vào thẳng
     const sinceCheck = Date.now() - (saved.checkedAt||0);
     if (sinceCheck < LIC_CHECK_MS) {
+      _applyPerm(saved);
       licEnter();
       return;
     }
 
-    // Đến lúc re-validate ngầm
     if (GS_URL) {
       try {
         const url  = `${GS_URL}?action=validate&code=${encodeURIComponent(saved.code)}&device=${encodeURIComponent(_deviceId())}`;
         const res  = await fetch(url, {cache:'no-store'});
         const data = await res.json();
         if (data.ok && data.valid) {
-          licSave({code:saved.code, name:data.name, expire:data.expire});
+          licSave({ code: saved.code, name: data.name, expire: data.expire,
+                    courts: data.courts, rounds: data.rounds, isAdmin: data.isAdmin });
+          _applyPerm(data);
           licEnter();
           return;
         } else {
-          // License hết hạn hoặc bị thu hồi → hiện màn hình
           licClear();
-          _licStatus('err', `❌ ${data.reason||'Mã không còn hợp lệ, vui lòng nhập lại'}`);
+          _licStatus('err', `❌ ${data.reason||'Mã không còn hợp lệ, nhập lại'}`);
+          screen.style.display = 'flex';
         }
       } catch(e) {
-        // Lỗi mạng → cho vào tạm (offline grace)
+        // Lỗi mạng → offline grace
+        _applyPerm(saved);
         licEnter();
         return;
       }
     } else {
-      // Chưa có GS_URL → vào tạm
+      _applyPerm(saved);
       licEnter();
       return;
     }
+  } else {
+    screen.style.display = 'flex';
   }
-  // Không có saved → hiện màn hình nhập mã
-  screen.style.display = 'flex';
 }
 
 // ══════════════════════════════════════════
