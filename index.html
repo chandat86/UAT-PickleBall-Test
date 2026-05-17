@@ -125,45 +125,155 @@ select, input { font-family: inherit; }
 @keyframes pop { from{transform:scale(.94);opacity:0} to{transform:scale(1);opacity:1} }
 
 /* ── SCOREBOARD ── */
-.scoreboard { display:grid; grid-template-columns:1fr 90px 1fr; gap:7px; }
-.team-card { background:var(--g50); border:2.5px solid var(--g200); border-radius:var(--r); padding:11px 8px; text-align:center; transition:border-color .2s, background .2s, box-shadow .2s; position:relative; }
+.scoreboard { display:grid; grid-template-columns:1fr 86px 1fr; gap:6px; }
+.team-card { background:var(--g50); border:2.5px solid var(--g200); border-radius:var(--r); padding:10px 7px; text-align:center; transition:border-color .2s, background .2s, box-shadow .2s; position:relative; }
 .team-card.serving { border-color:var(--green); background:var(--green-bg); box-shadow:0 0 0 3px rgba(34,197,94,.1); }
 .team-card.winner  { border-color:var(--amber); background:var(--amber-bg); box-shadow:0 0 0 4px rgba(245,158,11,.12); }
-.srv-bar { height:5px; width:26px; border-radius:3px; background:var(--green); margin:0 auto 5px; opacity:0; transition:opacity .2s; }
+.srv-bar { height:4px; width:22px; border-radius:3px; background:var(--green); margin:0 auto 4px; opacity:0; transition:opacity .2s; }
 .serving .srv-bar { opacity:1; }
-/* Serve ball indicator inside team card */
-.srv-ball-row { display:flex; align-items:center; justify-content:center; gap:6px; min-height:22px; margin-bottom:2px; }
-.srv-ball { font-size:18px; opacity:0; transition:all .2s; transform:scale(.6); }
-.serving .srv-ball { opacity:1; transform:scale(1); }
-.srv-num-badge { font-size:10px; font-weight:700; font-family:'Oswald',sans-serif;
-  background:var(--green); color:#fff; border-radius:10px; padding:1px 7px;
-  opacity:0; transition:all .2s; transform:scale(.6); white-space:nowrap; }
-.serving .srv-num-badge { opacity:1; transform:scale(1); }
-.tname { font-size:11px; font-weight:600; color:var(--g500); text-transform:uppercase; letter-spacing:.3px; min-height:28px; display:flex; align-items:center; justify-content:center; line-height:1.3; }
-.snum { font-family:'Oswald',sans-serif; font-size:84px; font-weight:700; line-height:1; margin:3px 0 5px; color:var(--g900); transition:color .2s; }
+.tgt-tag { position:absolute; top:5px; right:6px; font-size:10px; font-weight:700; font-family:'Oswald',sans-serif; color:var(--g400); background:var(--g100); border-radius:8px; padding:1px 5px; }
+
+/* ── PLAYERS LIST trong team-card ── */
+.players-list { width:100%; margin-bottom:4px; }
+.player-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:3px 5px; border-radius:7px; margin-bottom:2px;
+  border:1.5px solid transparent;
+  background:transparent; transition:all .2s;
+  min-height:26px;
+}
+.player-row.is-server {
+  background:var(--green-bg); border-color:var(--green-bd);
+}
+.team-card.winner .player-row.is-server {
+  background:var(--amber-bg); border-color:#fcd34d;
+}
+.player-name {
+  font-size:10.5px; font-weight:600; color:var(--g700);
+  text-align:left; flex:1; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  line-height:1.3;
+}
+.player-row.is-server .player-name { color:var(--green-dk); font-weight:700; }
+.team-card.winner .player-row.is-server .player-name { color:var(--amber-dk); }
+/* Serve ball icons */
+.serve-balls { display:flex; gap:2px; align-items:center; flex-shrink:0; margin-left:3px; }
+.serve-ball-icon { font-size:11px; line-height:1; }
+/* Position badge: Ô 1 / Ô 2 */
+.pos-badge {
+  font-size:9px; font-weight:700; font-family:'Oswald',sans-serif;
+  background:var(--g200); color:var(--g500); border-radius:5px;
+  padding:1px 4px; flex-shrink:0; margin-left:3px;
+}
+.player-row.is-server .pos-badge {
+  background:var(--green); color:#fff;
+}
+.team-card.winner .player-row.is-server .pos-badge {
+  background:var(--amber); color:#fff;
+}
+
+.snum { font-family:'Oswald',sans-serif; font-size:78px; font-weight:700; line-height:1; margin:2px 0 4px; color:var(--g900); transition:color .2s; }
 .serving .snum { color:var(--green-dk); }
 .winner .snum  { color:var(--amber-dk); }
-.tgt-tag { position:absolute; top:6px; right:7px; font-size:10px; font-weight:700; font-family:'Oswald',sans-serif; color:var(--g400); background:var(--g100); border-radius:8px; padding:1px 5px; }
-.sc-btns { display:flex; gap:6px; justify-content:center; margin-bottom:6px; }
-.sc-btn { width:42px; height:42px; border-radius:50%; border:none; font-size:20px; font-weight:700; transition:transform .1s; }
+.sc-btns { display:flex; gap:5px; justify-content:center; margin-bottom:5px; }
+.sc-btn { width:44px; height:44px; border-radius:50%; border:none; font-size:22px; font-weight:700; transition:transform .1s; }
 .sc-btn:active { transform:scale(.88); }
-.sc-btn.plus  { background:var(--green); color:#fff; }
+.sc-btn.plus  { background:var(--green); color:#fff; box-shadow:0 2px 8px rgba(34,197,94,.35); }
 .sc-btn.minus { background:var(--g200); color:var(--g500); }
 .ex-row { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
 .ex-btn { border:none; border-radius:6px; padding:5px 2px; font-size:10px; font-weight:600; }
 .ex-btn.timeout { background:#fef3c7; color:#92400e; }
 .ex-btn.medical { background:#fee2e2; color:#991b1b; }
 
+/* ── SERVE ZONE — khu vực giao bóng đồ họa ── */
+.serve-zone-card {
+  background:var(--card); border-radius:var(--r); box-shadow:var(--sh);
+  padding:10px 12px; margin-top:2px;
+}
+.serve-zone-title {
+  font-family:'Oswald',sans-serif; font-size:11px; font-weight:700;
+  color:var(--g500); text-transform:uppercase; letter-spacing:.4px;
+  margin-bottom:8px; text-align:center;
+}
+.court-diagram {
+  display:grid; grid-template-columns:1fr 36px 1fr; gap:0;
+  border:2px solid var(--g300); border-radius:8px; overflow:hidden;
+  background:#f8fbf8; position:relative;
+}
+.court-half {
+  display:grid; grid-template-rows:1fr 1fr; min-height:88px;
+}
+.court-box {
+  border:1px solid var(--g200); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; padding:4px 3px;
+  position:relative; transition:all .2s; min-height:42px;
+}
+.court-box.active-server {
+  background:linear-gradient(135deg,#dcfce7,#bbf7d0);
+  border-color:var(--green);
+}
+.court-box.active-receiver {
+  background:linear-gradient(135deg,#dbeafe,#bfdbfe);
+  border-color:var(--blue);
+}
+.court-box.teammate {
+  background:#fafafa;
+}
+.court-player-name {
+  font-size:9px; font-weight:700; color:var(--g700);
+  text-align:center; line-height:1.25;
+  overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; max-width:100%;
+}
+.court-box.active-server .court-player-name { color:var(--green-dk); }
+.court-box.active-receiver .court-player-name { color:var(--blue); }
+.court-box-label {
+  font-size:8px; color:var(--g400); margin-top:1px; font-weight:600;
+}
+.court-ball-indicator {
+  font-size:14px; margin-bottom:1px;
+}
+/* Net center */
+.court-net {
+  display:flex; align-items:center; justify-content:center;
+  background:var(--g200); writing-mode:vertical-rl;
+  font-size:9px; font-weight:700; color:var(--g500); letter-spacing:1px;
+}
+/* Nút đổi giao bóng lớn */
+.btn-transfer-serve {
+  width:100%; border:none; border-radius:10px;
+  background:linear-gradient(90deg,#f59e0b,#d97706);
+  color:#fff; font-family:'Oswald',sans-serif;
+  font-size:14px; font-weight:700; padding:11px 0;
+  cursor:pointer; transition:opacity .15s, transform .1s;
+  margin-top:8px; letter-spacing:.3px;
+  box-shadow:0 2px 8px rgba(245,158,11,.35);
+}
+.btn-transfer-serve:active { transform:scale(.97); opacity:.9; }
+.btn-transfer-serve:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.serve-info-row {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  margin-top:6px; font-size:11px; font-weight:600; color:var(--g600);
+}
+.serve-badge-big {
+  display:inline-flex; align-items:center; gap:4px;
+  background:var(--green); color:#fff; border-radius:20px;
+  padding:3px 10px; font-family:'Oswald',sans-serif; font-size:12px; font-weight:700;
+}
+.serve-badge-big.first-serve { background:#f59e0b; }
+
+/* BXH scroll limit */
+.bxh-scroll-body { max-height:220px; overflow-y:auto; }
+
+/* Kết quả scroll limit */
+.res-scroll-body { max-height:260px; overflow-y:auto; }
+
 /* ── CENTER COL ── */
-.ctr-col { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; }
-.game-pill { background:var(--green-dk); color:#fff; font-family:'Oswald',sans-serif; font-size:13px; font-weight:700; padding:4px 10px; border-radius:20px; white-space:nowrap; }
-.ctr-btn { width:100%; border:1.5px solid var(--g200); border-radius:7px; background:var(--card); padding:5px 3px; font-size:10.5px; font-weight:600; color:var(--g700); transition:all .15s; }
+.ctr-col { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+.game-pill { background:var(--green-dk); color:#fff; font-family:'Oswald',sans-serif; font-size:12px; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap; }
+.ctr-btn { width:100%; border:1.5px solid var(--g200); border-radius:7px; background:var(--card); padding:4px 3px; font-size:10px; font-weight:600; color:var(--g700); transition:all .15s; }
 .ctr-btn:hover { border-color:var(--green); color:var(--green-dk); }
-.srv-toggle { display:flex; width:100%; border:1.5px solid var(--g200); border-radius:7px; overflow:hidden; }
-.srv-t { flex:1; border:none; background:var(--g50); padding:5px 0; font-size:10.5px; font-weight:600; color:var(--g500); border-right:1px solid var(--g200); transition:all .15s; }
-.srv-t:last-child { border-right:none; }
-.srv-t.active { background:var(--green); color:#fff; }
-.mi-tag { font-size:9.5px; color:var(--g400); text-align:center; line-height:1.3; max-width:86px; word-break:break-word; }
+.mi-tag { font-size:9px; color:var(--g400); text-align:center; line-height:1.3; max-width:82px; word-break:break-word; }
 
 /* ── CONTROLS ── */
 .ctrl-row { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
@@ -304,6 +414,7 @@ select, input { font-family: inherit; }
 .bxh-filter { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
 .bxh-filter .sel-w { flex:1; min-width:120px; }
 .bxh-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; border:1.5px solid var(--g200); }
+.bxh-table-scroll { max-height:220px; overflow-y:auto; border-radius:0 0 8px 8px; }
 .bxh-table { width:100%; border-collapse:collapse; font-size:12px; }
 .bxh-table thead tr { background:var(--green-dk); color:#fff; }
 .bxh-table thead th { padding:8px 6px; text-align:right; font-family:'Oswald',sans-serif; font-size:11.5px; font-weight:700; letter-spacing:.3px; white-space:nowrap; }
@@ -526,10 +637,18 @@ select, input { font-family: inherit; }
   <div class="team-card serving" id="card-a">
     <div class="tgt-tag" id="tgt-a">→11</div>
     <div class="srv-bar"></div>
-    <div class="tname" id="name-a">Đội A</div>
-    <div class="srv-ball-row">
-      <span class="srv-ball">🎾</span>
-      <span class="srv-num-badge" id="srv-num-a">Giao 1</span>
+    <!-- Danh sách 2 VĐV Đội A -->
+    <div class="players-list" id="players-a">
+      <div class="player-row" id="player-a1" data-side="a" data-idx="0">
+        <span class="player-name" id="pname-a1">VĐV 1</span>
+        <span class="serve-balls" id="sballs-a1"></span>
+        <span class="pos-badge" id="pos-a1">Ô1</span>
+      </div>
+      <div class="player-row" id="player-a2" data-side="a" data-idx="1">
+        <span class="player-name" id="pname-a2">VĐV 2</span>
+        <span class="serve-balls" id="sballs-a2"></span>
+        <span class="pos-badge" id="pos-a2">Ô2</span>
+      </div>
     </div>
     <div class="snum" id="score-a">0</div>
     <div class="sc-btns">
@@ -546,11 +665,6 @@ select, input { font-family: inherit; }
   <div class="ctr-col">
     <div class="game-pill" id="game-pill">Game 1</div>
     <button class="ctr-btn" onclick="swapSides()">⇄ Đổi sân</button>
-    <button class="ctr-btn" onclick="toggleServe()">↔ Giao bóng</button>
-    <div class="srv-toggle">
-      <button class="srv-t active" id="srv1" onclick="setServe(1)">G1</button>
-      <button class="srv-t"        id="srv2" onclick="setServe(2)">G2</button>
-    </div>
     <div class="mi-tag" id="mi-tag">–</div>
   </div>
 
@@ -558,10 +672,18 @@ select, input { font-family: inherit; }
   <div class="team-card" id="card-b">
     <div class="tgt-tag" id="tgt-b">→11</div>
     <div class="srv-bar"></div>
-    <div class="tname" id="name-b">Đội B</div>
-    <div class="srv-ball-row">
-      <span class="srv-ball">🎾</span>
-      <span class="srv-num-badge" id="srv-num-b">Giao 1</span>
+    <!-- Danh sách 2 VĐV Đội B -->
+    <div class="players-list" id="players-b">
+      <div class="player-row" id="player-b1" data-side="b" data-idx="0">
+        <span class="player-name" id="pname-b1">VĐV 1</span>
+        <span class="serve-balls" id="sballs-b1"></span>
+        <span class="pos-badge" id="pos-b1">Ô1</span>
+      </div>
+      <div class="player-row" id="player-b2" data-side="b" data-idx="1">
+        <span class="player-name" id="pname-b2">VĐV 2</span>
+        <span class="serve-balls" id="sballs-b2"></span>
+        <span class="pos-badge" id="pos-b2">Ô2</span>
+      </div>
     </div>
     <div class="snum" id="score-b">0</div>
     <div class="sc-btns">
@@ -575,6 +697,50 @@ select, input { font-family: inherit; }
   </div>
 </div>
 
+<!-- ── KHU VỰC GIAO BÓNG ── -->
+<div class="serve-zone-card" id="serve-zone">
+  <div class="serve-zone-title">🎾 Khu vực giao bóng</div>
+  <!-- Sơ đồ sân -->
+  <div class="court-diagram" id="court-diagram">
+    <!-- Nửa sân trái (Đội hiện tại bên trái) -->
+    <div class="court-half" id="court-left">
+      <div class="court-box" id="cbox-L-E" title="Ô chẵn (Even) bên trái">
+        <div class="court-ball-indicator" id="cball-L-E"></div>
+        <div class="court-player-name" id="cname-L-E">–</div>
+        <div class="court-box-label">Ô Chẵn</div>
+      </div>
+      <div class="court-box" id="cbox-L-O" title="Ô lẻ (Odd) bên trái">
+        <div class="court-ball-indicator" id="cball-L-O"></div>
+        <div class="court-player-name" id="cname-L-O">–</div>
+        <div class="court-box-label">Ô Lẻ</div>
+      </div>
+    </div>
+    <!-- Lưới giữa -->
+    <div class="court-net">N·E·T</div>
+    <!-- Nửa sân phải (Đội đang đỡ hoặc bên phải) -->
+    <div class="court-half" id="court-right">
+      <div class="court-box" id="cbox-R-E" title="Ô chẵn bên phải">
+        <div class="court-ball-indicator" id="cball-R-E"></div>
+        <div class="court-player-name" id="cname-R-E">–</div>
+        <div class="court-box-label">Ô Chẵn</div>
+      </div>
+      <div class="court-box" id="cbox-R-O" title="Ô lẻ bên phải">
+        <div class="court-ball-indicator" id="cball-R-O"></div>
+        <div class="court-player-name" id="cname-R-O">–</div>
+        <div class="court-box-label">Ô Lẻ</div>
+      </div>
+    </div>
+  </div>
+  <!-- Thông tin giao bóng -->
+  <div class="serve-info-row" id="serve-info-row">
+    <span id="serve-status-label">–</span>
+    <span class="serve-badge-big" id="serve-num-badge">Giao 2</span>
+  </div>
+  <!-- Nút đổi giao bóng (điểm cho đội không giao) -->
+  <button class="btn-transfer-serve" id="btn-transfer-serve" onclick="transferServe()" disabled>
+    🔄 Đổi giao bóng → Đội kia giao
+  </button>
+</div>
 <!-- ── CONTROLS ── -->
 <div class="ctrl-row" style="grid-template-columns:1fr 1fr 1fr 1fr">
   <button class="ctrl-btn start" id="btn-start" onclick="startMatch()">▶ Bắt đầu</button>
@@ -582,7 +748,6 @@ select, input { font-family: inherit; }
   <button class="ctrl-btn save"  onclick="saveResult()">💾 Lưu</button>
   <button class="ctrl-btn reset" onclick="resetMatch()">↺ Reset</button>
 </div>
-<!-- Bốc thăm — nằm dưới ctrl-row, chỉ hiện khi có trận -->
 <div id="toss-bar" style="display:none;margin-top:4px">
   <button onclick="openTossModal()" style="width:100%;border:2px dashed var(--green-bd);background:var(--green-bg);color:var(--green-dk);border-radius:10px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">
     🎲 Bốc thăm chọn quyền
@@ -625,8 +790,12 @@ select, input { font-family: inherit; }
           <th class="col-ref">TT</th>
           <th class="col-rule">QT</th>
         </tr></thead>
-        <tbody id="res-body"><tr><td colspan="7" class="empty-msg">Chưa có kết quả</td></tr></tbody>
       </table>
+      <div style="max-height:260px;overflow-y:auto">
+        <table class="res-table">
+          <tbody id="res-body"><tr><td colspan="11" class="empty-msg">Chưa có kết quả</td></tr></tbody>
+        </table>
+      </div>
     </div>
     <div class="match-bar" style="margin-top:8px">
       <button class="sm-btn clr" onclick="clearResults()">🗑 Xóa kết quả</button>
@@ -653,8 +822,7 @@ select, input { font-family: inherit; }
           <option value="">-- Bảng --</option>
         </select>
       </div>
-      <button class="gsbtn save" id="bxh-reload-btn" onclick="loadBXHFromGS()" style="padding:7px 12px;font-size:12px;white-space:nowrap;border-radius:8px">🔄 Cập nhật BXH</button>
-    </div>
+      <button class="gsbtn save" id="bxh-reload-btn" onclick="loadBXHFromGS()" style="padding:7px 12px;font-size:12px;white-space:nowrap;border-radius:8px">🔄 Cập nhật BXH</button>    </div>
     <!-- Source info -->
     <div id="bxh-src" style="font-size:10px;color:var(--g400);margin-bottom:6px;min-height:14px"></div>
     <!-- Table -->
@@ -671,10 +839,14 @@ select, input { font-family: inherit; }
             <th>Điểm</th>
           </tr>
         </thead>
-        <tbody id="bxh-body">
-          <tr><td colspan="7" class="bxh-empty">Nhấn 🔄 Cập nhật BXH để cập nhật từ Google Sheets</td></tr>
-        </tbody>
       </table>
+      <div class="bxh-table-scroll">
+        <table class="bxh-table" style="border-radius:0">
+          <tbody id="bxh-body">
+            <tr><td colspan="7" class="bxh-empty">Nhấn 🔄 Cập nhật BXH để cập nhật từ Google Sheets</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     <!-- Legend -->
     <div class="bxh-legend">
@@ -942,17 +1114,25 @@ select, input { font-family: inherit; }
 
       <!-- STEP 3: Nhập tên VĐV giao bóng / đỡ -->
       <div id="toss-step-3" style="display:none">
-        <div style="font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Bước 3 — Người giao & đỡ bóng đầu tiên</div>
+        <div style="font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Bước 3 — Chọn người giao & đỡ bóng đầu tiên</div>
         <div style="display:grid;gap:10px;margin-bottom:14px">
           <div>
             <div style="font-size:11px;font-weight:600;color:var(--g700);margin-bottom:4px">🏓 Người giao bóng</div>
             <div style="font-size:10px;color:var(--g400);margin-bottom:5px" id="toss-server-team-label"></div>
-            <input class="inp" id="toss-server-name" placeholder="Nhập tên người giao bóng…" style="font-size:13px">
+            <div class="sel-w">
+              <select class="sel" id="toss-server-sel" style="font-size:13px">
+                <option value="">-- Chọn người giao --</option>
+              </select>
+            </div>
           </div>
           <div>
-            <div style="font-size:11px;font-weight:600;color:var(--g700);margin-bottom:4px">🛡 Người đỡ bóng</div>
+            <div style="font-size:11px;font-weight:600;color:var(--g700);margin-bottom:4px">🛡 Người đỡ bóng (đối diện)</div>
             <div style="font-size:10px;color:var(--g400);margin-bottom:5px" id="toss-receiver-team-label"></div>
-            <input class="inp" id="toss-receiver-name" placeholder="Nhập tên người đỡ bóng…" style="font-size:13px">
+            <div class="sel-w">
+              <select class="sel" id="toss-receiver-sel" style="font-size:13px">
+                <option value="">-- Chọn người đỡ --</option>
+              </select>
+            </div>
           </div>
         </div>
         <button onclick="tossConfirmPlayers()" style="width:100%;border:none;background:var(--green);color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Tiếp theo →</button>
@@ -1667,7 +1847,16 @@ function confirmAdd() {
 // ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
-let S = {a:0, b:0, server:'a', serveNum:2, isFirstServe:true, game:1, history:[], currentMatch:null, results:{}};
+let S = {
+  a:0, b:0, server:'a', serveNum:2, isFirstServe:true,
+  game:1, history:[], currentMatch:null, results:{},
+  // Vị trí người giao trong đội: serverPlayerIdx: 0 = VĐV 1 (Ô1), 1 = VĐV 2 (Ô2)
+  // Ô giao bóng theo điểm: chẵn (0,2,4...) = Ô chẵn (Even), lẻ (1,3,5...) = Ô lẻ (Odd)
+  serverPlayerIdx: 0,  // index VĐV đang giao trong đội (0 hoặc 1)
+  // Tên VĐV từ bốc thăm
+  playersA: ['', ''],  // [VĐV1, VĐV2] của đội A
+  playersB: ['', ''],  // [VĐV1, VĐV2] của đội B
+};
 try { S.results = JSON.parse(localStorage.getItem('pb_res6')||'{}'); } catch(e){}
 let evLog = [];
 try { evLog = JSON.parse(localStorage.getItem('pb_ev6')||'[]'); } catch(e){}
@@ -1681,17 +1870,158 @@ function render() {
   document.getElementById('game-pill').textContent = 'Game '+S.game;
   document.getElementById('card-a').classList.toggle('serving', S.server==='a');
   document.getElementById('card-b').classList.toggle('serving', S.server==='b');
-  document.getElementById('srv1').classList.toggle('active', S.serveNum===1);
-  document.getElementById('srv2').classList.toggle('active', S.serveNum===2);
-  // Serve number badge in each card
-  const snA = document.getElementById('srv-num-a');
-  const snB = document.getElementById('srv-num-b');
-  const srvLabel = S.isFirstServe ? 'Giao 2 ★' : `Giao ${S.serveNum}`;
-  if (snA) snA.textContent = srvLabel;
-  if (snB) snB.textContent = srvLabel;
+
+  // ── Render player rows với serve indicator ──
+  _renderPlayerRows();
+  // ── Render sơ đồ sân ──
+  _renderCourtDiagram();
+  // ── Cập nhật serve zone info ──
+  _renderServeInfo();
+
   checkWin();
   checkAutoSwap();
   updateTossBar();
+}
+
+// ── Helper: Render 2 dòng VĐV mỗi đội ──
+function _renderPlayerRows() {
+  const m = S.currentMatch;
+  const playersA = m ? (m.playersA || S.playersA) : S.playersA;
+  const playersB = m ? (m.playersB || S.playersB) : S.playersB;
+
+  // VĐV đang giao: S.server = 'a'|'b', S.serverPlayerIdx = 0|1
+  // Ô giao: điểm của đội giao chẵn/lẻ → xác định người đứng
+  // Luật pickleball: điểm giao viên là số lẻ/chẵn xác định vị trí Ô 1/2
+  const serverScore = S.server === 'a' ? S.a : S.b;
+  // Ô giao: chẵn = Even side (Ô chẵn = right service court), lẻ = Odd side
+  // Người giao đứng ở Ô tương ứng với điểm số của họ
+  const isEvenScore = (serverScore % 2 === 0);
+
+  // Đội đang giao: người có serverPlayerIdx đang là server
+  ['a','b'].forEach(side => {
+    const players = side === 'a' ? playersA : playersB;
+    const isServing = S.server === side;
+    for (let i = 0; i < 2; i++) {
+      const row  = document.getElementById(`player-${side}${i+1}`);
+      const name = document.getElementById(`pname-${side}${i+1}`);
+      const balls= document.getElementById(`sballs-${side}${i+1}`);
+      const pos  = document.getElementById(`pos-${side}${i+1}`);
+      if (!row || !name) continue;
+
+      const pName = players[i] || (side==='a'?`VĐV A${i+1}`:`VĐV B${i+1}`);
+      name.textContent = pName;
+
+      const isThisServer = isServing && (i === S.serverPlayerIdx);
+      row.classList.toggle('is-server', isThisServer);
+
+      // Serve ball icons: giao 2★ → 2 bóng, giao 1 → 1 bóng, giao 2 → 2 bóng
+      if (isThisServer) {
+        const n = S.isFirstServe ? 2 : S.serveNum;
+        balls.innerHTML = '🎾'.repeat(n);
+        balls.title = S.isFirstServe ? 'Giao 2★ (đầu trận)' : `Giao ${n}`;
+      } else {
+        balls.innerHTML = '';
+      }
+
+      // Position badge: Ô 1 (Odd) / Ô 2 (Even)
+      // Ô Chẵn = right side, Ô Lẻ = left side (theo luật pickleball)
+      pos.textContent = `Ô${i===0?'1':'2'}`;
+    }
+  });
+}
+
+// ── Render sơ đồ sân pickleball ──
+// Left = side A (giao bóng khi A đang giao), Right = side B
+function _renderCourtDiagram() {
+  const m = S.currentMatch;
+  const playersA = m ? (m.playersA || S.playersA) : S.playersA;
+  const playersB = m ? (m.playersB || S.playersB) : S.playersB;
+
+  const servingTeam   = S.server;    // 'a' | 'b'
+  const receivingTeam = servingTeam === 'a' ? 'b' : 'a';
+
+  const srvPlayers = servingTeam === 'a' ? playersA : playersB;
+  const rcvPlayers = receivingTeam === 'a' ? playersA : playersB;
+
+  // Xác định người đang giao và đồng đội
+  const srvIdx   = S.serverPlayerIdx;
+  const srvName  = srvPlayers[srvIdx] || (servingTeam==='a'?'VĐV A':'VĐV B') + (srvIdx+1);
+  const mateIdx  = srvIdx === 0 ? 1 : 0;
+  const mateName = srvPlayers[mateIdx] || (servingTeam==='a'?'VĐV A':'VĐV B') + (mateIdx+1);
+
+  // Điểm của đội giao → xác định người giao đứng Ô chẵn hay lẻ
+  const serverScore = servingTeam === 'a' ? S.a : S.b;
+  const isEven = (serverScore % 2 === 0);
+
+  // Server đứng: Even score → Even court (Ô chẵn = right), Odd score → Odd court (Ô lẻ = left)
+  // Trên sơ đồ: L-O = trái-lẻ, L-E = trái-chẵn, R-O = phải-lẻ, R-E = phải-chẵn
+
+  // Đặt server ở phía sân serving (L=trái), receiver đối diện (R=phải)
+  // Server: tại Ô theo điểm chẵn/lẻ
+  const serverBox   = isEven ? 'L-E' : 'L-O';  // chẵn đứng bên phải của họ = Even
+  const mateBox     = isEven ? 'L-O' : 'L-E';  // đồng đội ở Ô còn lại
+  const receiverBox = isEven ? 'R-E' : 'R-O';  // receiver đứng chéo với server
+
+  // Tên người nhận: cùng Ô (receiver 1)
+  const rcvName  = rcvPlayers[0] || (receivingTeam==='a'?'VĐV A':'VĐV B')+'1';
+  const rcv2Name = rcvPlayers[1] || (receivingTeam==='a'?'VĐV A':'VĐV B')+'2';
+  const rcvBox2  = isEven ? 'R-O' : 'R-E'; // đồng đội bên nhận
+
+  const boxes = {
+    'L-E': { name:'', cls:'', ball:'' },
+    'L-O': { name:'', cls:'', ball:'' },
+    'R-E': { name:'', cls:'', ball:'' },
+    'R-O': { name:'', cls:'', ball:'' },
+  };
+
+  boxes[serverBox]   = { name:srvName,  cls:'active-server',   ball: S.isFirstServe?'🎾🎾':'🎾'.repeat(S.serveNum) };
+  boxes[mateBox]     = { name:mateName, cls:'teammate',         ball:'' };
+  // Receiver đối diện với server
+  const finalRcvBox = receiverBox;
+  const finalRcv2Box= rcvBox2;
+  boxes[finalRcvBox]  = { name:rcvName,  cls:'active-receiver', ball:'🛡' };
+  boxes[finalRcv2Box] = { name:rcv2Name, cls:'teammate',        ball:'' };
+
+  Object.entries(boxes).forEach(([boxId, info]) => {
+    const box   = document.getElementById(`cbox-${boxId}`);
+    const cname = document.getElementById(`cname-${boxId}`);
+    const cball = document.getElementById(`cball-${boxId}`);
+    if (!box || !cname) return;
+    box.className = 'court-box ' + info.cls;
+    cname.textContent = info.name || '–';
+    if (cball) cball.textContent = info.ball;
+  });
+
+  // Label sân trái/phải
+  const leftLabel = document.querySelector('#court-left')?.setAttribute('title',
+    `${servingTeam==='a'?'Đội A':'Đội B'} (Giao bóng)`);
+  const rightLabel = document.querySelector('#court-right')?.setAttribute('title',
+    `${receivingTeam==='a'?'Đội A':'Đội B'} (Đỡ bóng)`);
+}
+
+// ── Render thông tin giao bóng ──
+function _renderServeInfo() {
+  const m = S.currentMatch;
+  const playersA = m ? (m.playersA || S.playersA) : S.playersA;
+  const playersB = m ? (m.playersB || S.playersB) : S.playersB;
+  const srvPlayers = S.server === 'a' ? playersA : playersB;
+  const srvName = srvPlayers[S.serverPlayerIdx] || (S.server==='a'?'Đội A':'Đội B');
+  const srvTeam = S.server === 'a'
+    ? (m ? sn(m.origTeamA||m.teamA) : 'Đội A')
+    : (m ? sn(m.origTeamB||m.teamB) : 'Đội B');
+
+  const label = document.getElementById('serve-status-label');
+  const badge = document.getElementById('serve-num-badge');
+  const btn   = document.getElementById('btn-transfer-serve');
+
+  const n = S.isFirstServe ? 2 : S.serveNum;
+  const badgeText = S.isFirstServe ? 'Giao 2 ★' : `Giao ${n}`;
+  if (label) label.textContent = `🏓 ${srvName} (${srvTeam}) đang giao`;
+  if (badge) {
+    badge.textContent = badgeText;
+    badge.className = 'serve-badge-big' + (S.isFirstServe?' first-serve':'');
+  }
+  if (btn) btn.disabled = !matchStarted;
 }
 
 function checkWin() {
@@ -1740,13 +2070,11 @@ function checkAutoSwap() {
     S.server = S.server === 'a' ? 'b' : 'a';
     if (S.currentMatch) {
       [S.currentMatch.teamA, S.currentMatch.teamB] = [S.currentMatch.teamB, S.currentMatch.teamA];
+      [S.currentMatch.playersA, S.currentMatch.playersB] = [S.currentMatch.playersB, S.currentMatch.playersA];
+      S.playersA = S.currentMatch.playersA;
+      S.playersB = S.currentMatch.playersB;
       S.currentMatch.origSideA = S.currentMatch.origSideA === 'a' ? 'b' : 'a';
-      document.getElementById('name-a').textContent = S.currentMatch.teamA;
-      document.getElementById('name-b').textContent = S.currentMatch.teamB;
     }
-
-    document.getElementById('score-a').textContent = S.a;
-    document.getElementById('score-b').textContent = S.b;
 
     // Toast nhỏ ở góc + rung — không che layout
     notice.classList.add('show');
@@ -1980,22 +2308,40 @@ function sn(name) {
 //  - Khi giao bóng thua điểm: chuyển server (trong đội nếu còn S1; sang đội kia nếu hết)
 // ══════════════════════════════════════════
 
+// Nút "Đổi giao bóng" — dùng khi điểm cho đội không giao (override tự động)
+// Cũng dùng khi trọng tài muốn đổi giao thủ công
+function transferServe() {
+  if (!matchStarted) { toast('⚠️ Nhấn Bắt đầu trước!'); return; }
+  const snap = JSON.stringify({a:S.a, b:S.b, server:S.server, serveNum:S.serveNum, isFirstServe:S.isFirstServe, serverPlayerIdx:S.serverPlayerIdx});
+  _advanceServe();
+  const who = S.server === 'a'
+    ? (S.currentMatch ? sn(S.currentMatch.teamA) : 'Đội A')
+    : (S.currentMatch ? sn(S.currentMatch.teamB) : 'Đội B');
+  pushLog(`🔄 Đổi giao bóng → ${who} Giao ${S.serveNum}`, snap);
+  S.history.push({snap, desc:'Đổi giao bóng'});
+  render();
+  toast(`🔄 ${who} giao bóng (Giao ${S.serveNum})`, 2500);
+}
+
 function addScore(side, delta) {
   if (!matchStarted) { toast('⚠️ Nhấn Bắt đầu trước!'); return; }
-  const snap = JSON.stringify({a:S.a, b:S.b, server:S.server, serveNum:S.serveNum, isFirstServe:S.isFirstServe});
+  const snap = JSON.stringify({a:S.a, b:S.b, server:S.server, serveNum:S.serveNum, isFirstServe:S.isFirstServe, serverPlayerIdx:S.serverPlayerIdx});
 
   if (delta > 0) {
     // Cộng điểm
     if (side === 'a') S.a = Math.max(0, S.a + 1);
     else              S.b = Math.max(0, S.b + 1);
 
-    // Điểm cho đội đang giao: server giữ nguyên, giao tiếp
-    // Điểm cho đội không giao: chuyển quyền giao
-    if (side !== S.server) {
-      // Đội không giao ghi điểm → chuyển quyền giao theo luật
+    if (side === S.server) {
+      // Đội đang giao ghi điểm:
+      // → Theo luật pickleball, người giao chuyển Ô (điểm số thay đổi → Ô giao thay đổi)
+      // → serverPlayerIdx KHÔNG đổi — cùng người giao, nhưng đứng Ô mới theo điểm
+      // (Ô xác định tự động trong _renderCourtDiagram theo điểm số)
+      // Không thay đổi gì về server/serveNum
+    } else {
+      // Đội không giao ghi điểm → chuyển quyền giao
       _advanceServe();
     }
-    // Nếu đội đang giao ghi điểm → server không đổi
   } else {
     // Trừ điểm (sửa sai) — chỉ trừ số, không đổi server
     if (side === 'a') S.a = Math.max(0, S.a - 1);
@@ -2037,20 +2383,29 @@ function addScore(side, delta) {
   }
 }
 
-// Chuyển quyền giao theo đúng luật pickleball
+// Chuyển quyền giao theo đúng luật pickleball đôi
+// - Đầu game: isFirstServe=true, serveNum=2 → chỉ 1 người giao, nếu thua → đổi đội, bắt đầu bằng Giao 1
+// - Giao 1 thua → Giao 2 (cùng đội, người còn lại giao)
+// - Giao 2 thua → đổi đội, bắt đầu từ Giao 1
+// - Khi giao thắng điểm: người giao chuyển Ô (1→2 hoặc 2→1) do điểm số thay đổi (tự động theo luật)
+// - Khi đổi giao bóng: người giao của đội mới bắt đầu từ Ô đúng theo điểm của họ
 function _advanceServe() {
   if (S.isFirstServe) {
     // Đầu game chỉ có Server 2 → khi thua → đổi đội, bắt đầu bằng Server 1
     S.isFirstServe = false;
     S.server  = S.server === 'a' ? 'b' : 'a';
     S.serveNum = 1;
+    // Người giao mới bắt đầu từ VĐV 1 (serverPlayerIdx = 0)
+    S.serverPlayerIdx = 0;
   } else if (S.serveNum === 1) {
-    // Server 1 thua → Server 2 cùng đội
+    // Server 1 thua → Server 2 cùng đội (người còn lại giao)
     S.serveNum = 2;
+    S.serverPlayerIdx = S.serverPlayerIdx === 0 ? 1 : 0; // đổi người giao
   } else {
     // Server 2 thua → đổi đội, bắt đầu từ Server 1
     S.server   = S.server === 'a' ? 'b' : 'a';
     S.serveNum = 1;
+    S.serverPlayerIdx = 0; // VĐV 1 của đội mới bắt đầu
   }
 }
 
@@ -2097,10 +2452,10 @@ function swapSides() {
   S.server=S.server==='a'?'b':'a';
   if (S.currentMatch) {
     [S.currentMatch.teamA,S.currentMatch.teamB]=[S.currentMatch.teamB,S.currentMatch.teamA];
-    // Theo dõi vị trí đội gốc sau mỗi lần đổi sân
+    [S.currentMatch.playersA, S.currentMatch.playersB]=[S.currentMatch.playersB, S.currentMatch.playersA];
+    S.playersA = S.currentMatch.playersA;
+    S.playersB = S.currentMatch.playersB;
     S.currentMatch.origSideA = S.currentMatch.origSideA === 'a' ? 'b' : 'a';
-    document.getElementById('name-a').textContent=S.currentMatch.teamA;
-    document.getElementById('name-b').textContent=S.currentMatch.teamB;
   }
   document.getElementById('swap-notice').classList.remove('show');
   pushLog('⇄ Đổi sân', null);
@@ -2113,6 +2468,7 @@ function undo() {
   const last=S.history.pop();
   const prev=JSON.parse(last.snap);
   S.a=prev.a; S.b=prev.b; S.server=prev.server; S.serveNum=prev.serveNum||2; S.isFirstServe=prev.isFirstServe??false;
+  if (typeof prev.serverPlayerIdx !== 'undefined') S.serverPlayerIdx = prev.serverPlayerIdx;
   // reset swap flag nếu cả 2 đội đều dưới ngưỡng
   if (Math.max(S.a, S.b) < RULES[winRule].swap) swapNotified=false;
   pushLog('↩ Undo: '+last.desc,null);
@@ -2121,7 +2477,7 @@ function undo() {
 
 function nextGame() {
   S.game++; S.a=0; S.b=0; S.history=[];
-  S.serveNum = 2; S.isFirstServe = true; // đầu game mới luôn là giao 2
+  S.serveNum = 2; S.isFirstServe = true; S.serverPlayerIdx = 0;
   swapNotified=false;
   document.getElementById('swap-notice').classList.remove('show');
   pushLog(`▶ Game ${S.game} bắt đầu — Giao 2`, null);
@@ -2132,6 +2488,7 @@ function nextGame() {
 function resetMatch() {
   if (!confirm('Đặt lại về 0–0?')) return;
   S.a=0; S.b=0; S.game=1; S.serveNum=2; S.isFirstServe=true; S.history=[];
+  S.serverPlayerIdx = 0;
   swapNotified=false;
   document.getElementById('swap-notice').classList.remove('show');
   pushLog('↺ Reset',null);
@@ -2332,47 +2689,56 @@ function confirmSave() {
 function loadMatch(idx) {
   const m=matchList[idx];
   S.currentMatch={...m};
-  // Lưu tên gốc cố định — không bị thay đổi khi đổi sân
   S.currentMatch.origTeamA = m.teamA;
   S.currentMatch.origTeamB = m.teamB;
-  // side: 'a' = Đội A gốc đang ở vị trí trái (card-a), 'b' = đang ở vị trí phải
-  S.currentMatch.origSideA = 'a'; // ban đầu teamA gốc ở bên A (trái)
+  S.currentMatch.origSideA = 'a';
 
-  // Điểm: chỉ dùng S.results nếu sheet Matches đã xác nhận có kết quả (matchScoreA/B != null)
-  // Nếu Matches chưa có điểm → trận chưa chấm → bắt đầu từ 0 dù localStorage có dữ liệu cũ
+  // Parse tên VĐV từ tên đội: "Nguyễn A - Trần B" → ['Nguyễn A', 'Trần B']
+  S.currentMatch.playersA = _parsePlayers(m.teamA);
+  S.currentMatch.playersB = _parsePlayers(m.teamB);
+  S.playersA = S.currentMatch.playersA;
+  S.playersB = S.currentMatch.playersB;
+
   const matchHasScore = (m.matchScoreA !== null && m.matchScoreA !== undefined &&
                          m.matchScoreB !== null && m.matchScoreB !== undefined);
   if (matchHasScore) {
-    // Matches đã có điểm → dùng điểm từ Matches (chính xác nhất)
-    S.a = m.matchScoreA;
-    S.b = m.matchScoreB;
+    S.a = m.matchScoreA; S.b = m.matchScoreB;
   } else {
-    // Matches chưa có điểm → trận mới chưa chấm → reset về 0
     S.a = 0; S.b = 0;
-    // Xoá kết quả cũ trong localStorage để tránh hiện nhầm
     if (S.results[m.key]) {
       delete S.results[m.key];
       try { localStorage.setItem('pb_res6', JSON.stringify(S.results)); } catch(e) {}
     }
   }
   S.game=1; S.server='a'; S.serveNum=2; S.isFirstServe=true; S.history=[];
+  S.serverPlayerIdx = 0;
   swapNotified=false;
-  // Luôn ẩn swap-notice khi chọn trận
   const snotice = document.getElementById('swap-notice');
   clearTimeout(snotice?._hideTimer);
   if (snotice) snotice.classList.remove('show');
-  // Win-banner: nếu trận đã hoàn thành thì render() sẽ tự show cố định
   const banner = document.getElementById('win-banner');
   if (banner) { clearTimeout(banner._hideTimer); banner.classList.remove('show'); }
-  document.getElementById('name-a').textContent=m.teamA;
-  document.getElementById('name-b').textContent=m.teamB;
   document.getElementById('mi-tag').textContent=`${m.code}\n${m.noidung}`;
   pushLog(`📋 Mở: ${m.code}`,null);
-  // Nếu trận đã hoàn thành → nút "Hoàn thành", ngược lại → "Bắt đầu"
   _setMatchStarted(false, matchHasScore);
   updateTossBar();
   render(); renderMatchGrid();
   toast(`📋 ${m.code}: ${sn(m.teamA)} vs ${sn(m.teamB)}`);
+}
+
+// Parse tên 2 VĐV từ chuỗi đội: "Nguyễn A - Trần B" hoặc "Nguyễn A / Trần B"
+function _parsePlayers(teamName) {
+  if (!teamName) return ['', ''];
+  // Tách bằng " - ", " / ", " & ", " + "
+  const sep = [' - ', ' / ', ' & ', ' + ', '-', '/'];
+  for (const s of sep) {
+    const parts = teamName.split(s);
+    if (parts.length >= 2) {
+      return [parts[0].trim(), parts.slice(1).join(s).trim()];
+    }
+  }
+  // Chỉ có 1 tên → dùng làm VĐV 1
+  return [teamName.trim(), ''];
 }
 
 // ── MẬT KHẨU BẢO VỆ ──
@@ -2541,27 +2907,73 @@ function tossChoose(choice) {
   const winTeam   = sn(winSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
   const loseTeam  = sn(loseSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
 
+  // Xác định đội giao và đỡ
+  let serverSide, receiverSide;
   if (choice === 'side') {
-    // Chọn sân → không cần nhập VĐV, giao bóng thuộc đội còn lại
-    _toss.serverSide = loseSide;
-    document.getElementById('toss-server-team-label').textContent = `Thuộc đội: ${loseTeam}`;
-    document.getElementById('toss-receiver-team-label').textContent = `Thuộc đội: ${winTeam}`;
+    // Chọn sân → đội kia giao
+    serverSide   = loseSide;
+    receiverSide = winSide;
   } else if (choice === 'serve') {
-    _toss.serverSide = winSide;
-    document.getElementById('toss-server-team-label').textContent = `Thuộc đội: ${winTeam}`;
-    document.getElementById('toss-receiver-team-label').textContent = `Thuộc đội: ${loseTeam}`;
+    serverSide   = winSide;
+    receiverSide = loseSide;
   } else { // receive
-    _toss.serverSide = loseSide;
-    document.getElementById('toss-server-team-label').textContent = `Thuộc đội: ${loseTeam}`;
-    document.getElementById('toss-receiver-team-label').textContent = `Thuộc đội: ${winTeam}`;
+    serverSide   = loseSide;
+    receiverSide = winSide;
   }
+  _toss.serverSide = serverSide;
+
+  // Populate dropdown VĐV giao bóng
+  const serverPlayers   = serverSide === 'a' ? (m.playersA||S.playersA) : (m.playersB||S.playersB);
+  const serverTeamName  = serverSide === 'a' ? winTeam : loseTeam;
+  const receiverPlayers = receiverSide === 'a' ? (m.playersA||S.playersA) : (m.playersB||S.playersB);
+  const receiverTeamName= receiverSide === 'a' ? winTeam : loseTeam;
+
+  const srvSel = document.getElementById('toss-server-sel');
+  const rcvSel = document.getElementById('toss-receiver-sel');
+  if (srvSel) {
+    srvSel.innerHTML = '<option value="">-- Chọn người giao --</option>';
+    serverPlayers.filter(Boolean).forEach((p,i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p || `VĐV ${i+1}`;
+      srvSel.appendChild(opt);
+    });
+    // Nếu chỉ có 1 người → tự chọn
+    if (serverPlayers.filter(Boolean).length === 1) srvSel.selectedIndex = 1;
+  }
+  if (rcvSel) {
+    rcvSel.innerHTML = '<option value="">-- Chọn người đỡ --</option>';
+    receiverPlayers.filter(Boolean).forEach((p,i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p || `VĐV ${i+1}`;
+      rcvSel.appendChild(opt);
+    });
+    if (receiverPlayers.filter(Boolean).length === 1) rcvSel.selectedIndex = 1;
+  }
+
+  document.getElementById('toss-server-team-label').textContent   = `Đội: ${serverSide==='a'?winTeam:loseTeam}`;
+  document.getElementById('toss-receiver-team-label').textContent = `Đội: ${receiverSide==='a'?winTeam:loseTeam}`;
+
   setTimeout(() => _tossShowStep(3), 250);
 }
 
 function tossConfirmPlayers() {
-  _toss.serverName   = document.getElementById('toss-server-name').value.trim();
-  _toss.receiverName = document.getElementById('toss-receiver-name').value.trim();
-  // Tên VĐV optional — không bắt buộc
+  const m = S.currentMatch;
+  const srvSel = document.getElementById('toss-server-sel');
+  const rcvSel = document.getElementById('toss-receiver-sel');
+  const serverSide   = _toss.serverSide;
+  const receiverSide = serverSide === 'a' ? 'b' : 'a';
+  const serverPlayers   = serverSide === 'a' ? (m.playersA||S.playersA) : (m.playersB||S.playersB);
+  const receiverPlayers = receiverSide === 'a' ? (m.playersA||S.playersA) : (m.playersB||S.playersB);
+
+  const srvIdx = srvSel?.value !== '' ? parseInt(srvSel.value) : 0;
+  const rcvIdx = rcvSel?.value !== '' ? parseInt(rcvSel.value) : 0;
+
+  _toss.serverName   = serverPlayers[srvIdx]   || `VĐV ${srvIdx+1}`;
+  _toss.receiverName = receiverPlayers[rcvIdx] || `VĐV ${rcvIdx+1}`;
+  _toss.serverPlayerIdx = srvIdx; // lưu để set vào S.serverPlayerIdx khi xác nhận
+
   _tossBuildSummary();
   _tossShowStep(4);
 }
@@ -2593,10 +3005,10 @@ function tossPrev() { _tossShowStep(Math.max(1, _toss.step - 1)); }
 function tossApply() {
   const m = S.currentMatch;
   if (!m) return;
-  // Thiết lập server: _toss.serverSide là 'a' hoặc 'b'
   S.server = _toss.serverSide || 'a';
   S.serveNum = 2;
   S.isFirstServe = true;
+  S.serverPlayerIdx = _toss.serverPlayerIdx ?? 0;
   render();
 
   // Ghi log
@@ -2792,10 +3204,10 @@ function confirmNewTournament() {
     try { localStorage.removeItem('pb_ml6'); } catch(e) {}
     syncDropdownsFromData(false);
     renderMatchGrid();
-    document.getElementById('name-a').textContent = 'Đội A';
-    document.getElementById('name-b').textContent = 'Đội B';
-    const mi = document.getElementById('mi-tag');
-    if (mi) mi.textContent = '–';
+    document.getElementById('mi-tag').textContent = '–';
+    // Reset player names
+    S.playersA = ['', '']; S.playersB = ['', ''];
+    render();
   }
   if (clrEvents) {
     evLog = [];
@@ -3041,8 +3453,8 @@ async function loadBXHFromGS() {
     return;
   }
 
-  if (btn) { btn.textContent = '⏳ Đang tải...'; btn.disabled = true; }
-  if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="bxh-empty">⏳ Đang tải từ Google Sheets...</td></tr>';
+  if (btn) { btn.textContent = '⏳ ĐANG CẬP NHẬT BXH...'; btn.disabled = true; }
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="bxh-empty" style="font-weight:700;color:var(--green-dk);font-family:Oswald,sans-serif;font-size:13px;letter-spacing:.3px">⏳ ĐANG CẬP NHẬT BẢNG XẾP HẠNG...</td></tr>';
 
   try {
     const res  = await fetch(GS_URL + '?action=results', { cache: 'no-store' });
