@@ -151,8 +151,10 @@ select, input { font-family: inherit; }
 .team-card.winner .player-row.is-server { background:var(--amber-bg); border-color:#fcd34d; }
 .player-name {
   font-size:10px; font-weight:600; color:var(--g700);
-  flex:1; min-width:0;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25;
+  flex:1; min-width:0; text-align:left;
+  overflow:hidden;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  white-space:normal; line-height:1.3; word-break:break-word;
 }
 .player-row.is-server .player-name { color:var(--green-dk); font-weight:700; }
 .team-card.winner .player-row.is-server .player-name { color:var(--amber-dk); }
@@ -1883,6 +1885,7 @@ function _setPlayerSlot(side, slot, players, pIdx, isServer, badgeLabel, badgeCl
   if (!row || !name) return;
 
   name.textContent = players[pIdx] || (side==='a' ? `A${pIdx+1}` : `B${pIdx+1}`);
+  name.title = name.textContent; // tooltip khi hover để xem đủ tên
   row.classList.toggle('is-server', isServer);
 
   if (isServer) {
@@ -2021,16 +2024,19 @@ function confirmSwap() {
 }
 
 function checkAutoSwap() {
+  if (!matchStarted) return;
+  const isDone = S.currentMatch && S.results[S.currentMatch.key];
+  if (isDone) return;
+  const swapAt = RULES[winRule].swap;
+  const hi     = Math.max(S.a, S.b);
+  const notice = document.getElementById('swap-notice');
 
   if (!swapNotified && hi >= swapAt) {
     swapNotified = true;
-    // Chỉ hiển thị thông báo — KHÔNG tự đổi sân
-    // Trọng tài bấm nút trong thông báo để xác nhận đổi
     if (notice) {
       notice.classList.add('show');
       navigator.vibrate && navigator.vibrate([300, 100, 300, 100, 300]);
       clearTimeout(notice._hideTimer);
-      // Thông báo giữ cho đến khi bấm nút
     }
     pushLog(`⚠️ ĐẾN ${swapAt} ĐIỂM — NHẤN ĐỔI SÂN`, null);
   }
@@ -2992,36 +2998,36 @@ function tossApply() {
   S.server = _toss.serverSide || 'a';
   S.serveNum = 2;
   S.isFirstServe = true;
-  S.posA = [0, 1]; S.posB = [0, 1]; // reset vị trí
-  // serverPlayerIdx = playerDataIdx ở Ô1 của đội giao (từ bốc thăm có thể đã chọn)
-  // Nếu _toss.serverPlayerIdx đã được chọn từ dropdown → dùng, không thì dùng 0 (Ô1)
+  S.posA = [0, 1]; S.posB = [0, 1];
   const chosenSrvIdx = _toss.serverPlayerIdx ?? 0;
   S.serverPlayerIdx = chosenSrvIdx;
-  // Đặt người giao vào Ô1 của đội họ
   if (S.server === 'a') {
-    // Đội A: Ô1 = posA[0]. Đặt chosenSrvIdx vào posA[0]
     S.posA = [chosenSrvIdx, 1 - chosenSrvIdx];
   } else {
-    // Đội B: Ô1 = posB[0]. Đặt chosenSrvIdx vào posB[0]
     S.posB = [chosenSrvIdx, 1 - chosenSrvIdx];
   }
-  render();
 
   // Ghi log
-  const winTeam  = sn(_toss.winner==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
-  const choiceText = {serve:'Giao bóng', receive:'Đỡ bóng', side:'Chọn sân'}[_toss.choice]||'';
-  const serverTeam = sn(_toss.serverSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
-  const serverNote = _toss.serverName ? `${_toss.serverName} (${serverTeam})` : serverTeam;
-  const receiverNote = _toss.receiverName || '';
+  const winTeam     = sn(_toss.winner==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+  const choiceText  = {serve:'Giao bóng', receive:'Đỡ bóng', side:'Chọn sân'}[_toss.choice]||'';
+  const serverTeam  = sn(_toss.serverSide==='a' ? (m.origTeamA||m.teamA) : (m.origTeamB||m.teamB));
+  const serverNote  = _toss.serverName ? `${_toss.serverName} (${serverTeam})` : serverTeam;
 
   pushLog(`🎲 Bốc thăm: ${winTeam} thắng → ${choiceText}`, null);
-  pushLog(`🏓 Giao bóng: ${serverNote}${receiverNote?' · 🛡 Đỡ: '+_toss.receiverName:''}`, null);
+  pushLog(`🏓 Giao bóng: ${serverNote}${_toss.receiverName?' · 🛡 Đỡ: '+_toss.receiverName:''}`, null);
   logToGS(`🎲 Bốc thăm: ${winTeam} → ${choiceText} · GBóng: ${serverNote}`, '');
 
-  closeModal('modal-toss');
-  // Tự động bắt đầu
-  startMatch();
-  toast(`🎲 Bốc thăm xong! ${serverNote} giao bóng trước`, 4000);
+  // Đóng modal — force display:none để chắc chắn
+  const tossModal = document.getElementById('modal-toss');
+  if (tossModal) { tossModal.classList.remove('show'); tossModal.style.display = 'none'; }
+
+  render();
+
+  // Bắt đầu trận sau 1 frame để UI cập nhật
+  requestAnimationFrame(() => {
+    startMatch();
+    toast(`🎲 ${serverNote} giao bóng • 0-0-2`, 4000);
+  });
 }
 let _lastMatchCount = 0;
 let _pollInterval   = null;
