@@ -170,14 +170,14 @@ select, input { font-family: inherit; }
 .pos-badge-1 { background:#0369a1; }  /* Ô1 — xanh dương đậm */
 .pos-badge-2 { background:#0891b2; }  /* Ô2 — teal */
 
-/* Score announce: điểm-điểm-lượt — xanh dương */
+/* Score announce: điểm-điểm-lượt — xanh dương teal */
 .score-announce {
   font-family:'Oswald',sans-serif;
   font-size:14px; font-weight:900; color:#fff;
-  background:#1d4ed8; border-radius:12px;
+  background:#0369a1; border-radius:12px;
   padding:5px 10px; white-space:nowrap;
   letter-spacing:.5px; text-align:center;
-  box-shadow:0 2px 6px rgba(29,78,216,.3);
+  box-shadow:0 2px 6px rgba(3,105,161,.3);
 }
 .score-announce.first-serve { background:#d97706; }
 
@@ -202,8 +202,10 @@ select, input { font-family: inherit; }
 /* ── CENTER COL ── */
 .ctr-col { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:5px; padding-top:4px; }
 /* Match info — xanh dương bold, to, có bảng đấu dưới */
-.mi-tag { font-size:10.5px; font-weight:900; color:#1d4ed8; text-align:center; line-height:1.35; max-width:70px; word-break:break-word; margin-bottom:0; letter-spacing:.2px; }
-.mi-bang { display:block; font-size:9px; font-weight:600; color:#6b7280; margin-top:1px; }
+.mi-tag { text-align:center; max-width:72px; word-break:break-word; margin-bottom:0; }
+.mi-code { display:block; font-size:10px; font-weight:900; color:#0369a1; letter-spacing:.3px; line-height:1.3; }
+.mi-nd   { display:block; font-size:9px; font-weight:700; color:#0891b2; letter-spacing:.2px; line-height:1.3; }
+.mi-bang { display:block; font-size:8.5px; font-weight:600; color:#6b7280; margin-top:1px; line-height:1.3; }
 .game-pill { background:#374151; color:#fff; font-family:'Oswald',sans-serif; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; white-space:nowrap; }
 /* Đổi sân — to hơn nữa */
 .ctr-btn { width:100%; border:2px solid var(--g300); border-radius:9px; background:var(--card); padding:7px 2px; font-size:12px; font-weight:700; color:var(--g700); transition:all .15s; }
@@ -661,10 +663,72 @@ select, input { font-family: inherit; }
   <button class="ctrl-btn save"  onclick="saveResult()">💾 Lưu</button>
   <button class="ctrl-btn reset" onclick="resetMatch()">↺ Reset</button>
 </div>
-<div id="toss-bar" style="display:none;margin-top:4px">
-  <button onclick="openTossModal()" style="width:100%;border:2px dashed var(--green-bd);background:var(--green-bg);color:var(--green-dk);border-radius:10px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">
-    🎲 Bốc thăm chọn quyền
-  </button>
+<div id="toss-bar" style="display:none;margin-top:6px">
+  <!-- Panel trước khi bắt đầu -->
+  <div id="prematch-panel" style="background:var(--card);border-radius:12px;border:1.5px solid var(--g200);padding:10px 12px">
+
+    <!-- Tiêu đề -->
+    <div style="font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;text-align:center">
+      🏓 Thiết lập trước trận
+    </div>
+
+    <!-- Chọn đội giao bóng trước -->
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;font-weight:600;color:var(--g600);margin-bottom:4px">Đội giao bóng đầu tiên:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <button id="pm-srv-a" onclick="pmSetServer('a')"
+          style="border:2px solid var(--g200);background:var(--g50);border-radius:8px;padding:6px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s;line-height:1.3">
+          <div id="pm-srv-a-name" style="font-size:9px;color:var(--g500)">Đội A</div>
+          Giao trước
+        </button>
+        <button id="pm-srv-b" onclick="pmSetServer('b')"
+          style="border:2px solid var(--g200);background:var(--g50);border-radius:8px;padding:6px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s;line-height:1.3">
+          <div id="pm-srv-b-name" style="font-size:9px;color:var(--g500)">Đội B</div>
+          Giao trước
+        </button>
+      </div>
+    </div>
+
+    <!-- Chọn người giao đầu tiên (hiện sau khi chọn đội) -->
+    <div id="pm-player-row" style="display:none;margin-bottom:8px">
+      <div style="font-size:10px;font-weight:600;color:var(--g600);margin-bottom:4px">Người giao bóng đầu tiên:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <button id="pm-p0" onclick="pmSetServerPlayer(0)"
+          style="border:2px solid var(--g200);background:var(--g50);border-radius:8px;padding:5px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s">
+          <span id="pm-p0-name">VĐV 1</span>
+        </button>
+        <button id="pm-p1" onclick="pmSetServerPlayer(1)"
+          style="border:2px solid var(--g200);background:var(--g50);border-radius:8px;padding:5px 4px;font-size:10px;font-weight:700;color:var(--g700);cursor:pointer;transition:all .15s">
+          <span id="pm-p1-name">VĐV 2</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hoán đổi VĐV lên xuống (Ô1 ↔ Ô2) cho mỗi đội -->
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;font-weight:600;color:var(--g600);margin-bottom:4px">Hoán đổi vị trí VĐV:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <button onclick="pmSwapPlayers('a')"
+          style="border:1.5px solid #0891b2;background:#e0f2fe;border-radius:8px;padding:5px 4px;font-size:10px;font-weight:700;color:#0369a1;cursor:pointer">
+          ↕ Đổi VĐV<br><span style="font-size:9px;font-weight:600" id="pm-swap-a-label">Đội A</span>
+        </button>
+        <button onclick="pmSwapPlayers('b')"
+          style="border:1.5px solid #0891b2;background:#e0f2fe;border-radius:8px;padding:5px 4px;font-size:10px;font-weight:700;color:#0369a1;cursor:pointer">
+          ↕ Đổi VĐV<br><span style="font-size:9px;font-weight:600" id="pm-swap-b-label">Đội B</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hoặc bốc thăm -->
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+      <div style="flex:1;height:1px;background:var(--g200)"></div>
+      <span style="font-size:9px;color:var(--g400)">hoặc</span>
+      <div style="flex:1;height:1px;background:var(--g200)"></div>
+    </div>
+    <button onclick="openTossModal()" style="width:100%;margin-top:6px;border:2px dashed var(--green-bd);background:var(--green-bg);color:var(--green-dk);border-radius:10px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+      🎲 Bốc thăm chọn quyền
+    </button>
+  </div>
 </div>
 
 <!-- ── NHẬT KÝ ── -->
@@ -2387,11 +2451,14 @@ function startMatch() {
   const btn = document.getElementById('btn-start');
   if (btn) { btn.textContent = '🟢 Đang thi đấu'; btn.classList.add('started'); }
   document.querySelector('.scoreboard')?.classList.remove('not-started');
+  // Ẩn panel trước trận
+  const bar = document.getElementById('toss-bar');
+  if (bar) bar.style.display = 'none';
   pushLog('▶ Bắt đầu trận', null);
   logToGS('▶ Bắt đầu trận', '');
   toast('▶ Trận đấu bắt đầu!');
   renderMatchGrid();
-  render(); // cập nhật lock nút +/-
+  render();
 }
 
 function _setMatchStarted(started, done) {
@@ -2692,16 +2759,19 @@ function loadMatch(idx) {
   }
   S.game=1; S.server='a'; S.serveNum=2; S.isFirstServe=true; S.history=[];
   S.serverPlayerIdx=0; S.posA=[0,1]; S.posB=[0,1];
+  _pm.serverSide = null; _pm.serverPlayerIdx = 0;
   swapNotified=false;
   const snotice = document.getElementById('swap-notice');
   clearTimeout(snotice?._hideTimer);
   if (snotice) snotice.classList.remove('show');
   const banner = document.getElementById('win-banner');
   if (banner) { clearTimeout(banner._hideTimer); banner.classList.remove('show'); }
-  // mi-tag: tên trận bold + bảng đấu dưới
+  // mi-tag: mã + bảng / nội dung / riêng biệt
   const miEl = document.getElementById('mi-tag');
   if (miEl) {
-    miEl.innerHTML = `<span>${m.code} ${m.noidung}</span><span class="mi-bang">${m.bang||''}</span>`;
+    const codeTag = `<span class="mi-code">${m.code}${m.bang ? ' · ' + m.bang : ''}</span>`;
+    const ndTag   = `<span class="mi-nd">${m.noidung||''}</span>`;
+    miEl.innerHTML = codeTag + ndTag;
   }
   pushLog(`📋 Mở: ${m.code}`,null);
   _setMatchStarted(false, matchHasScore);
@@ -2805,9 +2875,126 @@ function updateTossBar() {
   const bar = document.getElementById('toss-bar');
   if (!bar) return;
   const hasDone = S.currentMatch && S.results[S.currentMatch.key];
-  bar.style.display = (S.currentMatch && !hasDone) ? '' : 'none';
+  const show = S.currentMatch && !hasDone && !matchStarted;
+  bar.style.display = show ? '' : 'none';
+  if (show) updatePrematchPanel();
 }
 // ══════════════════════════════════════════
+//  PRE-MATCH PANEL — chọn đội/người giao + hoán đổi VĐV trước khi bắt đầu
+// ══════════════════════════════════════════
+let _pm = { serverSide: null, serverPlayerIdx: 0 };
+
+function updatePrematchPanel() {
+  const m = S.currentMatch;
+  if (!m) return;
+  const playersA = (m.playersA && m.playersA[0]) ? m.playersA : S.playersA;
+  const playersB = (m.playersB && m.playersB[0]) ? m.playersB : S.playersB;
+  const nameA = playersA[0] || m.teamA || 'Đội A';
+  const nameB = playersB[0] || m.teamB || 'Đội B';
+  const shortA = sn(m.origTeamA || m.teamA);
+  const shortB = sn(m.origTeamB || m.teamB);
+
+  const elA = document.getElementById('pm-srv-a-name');
+  const elB = document.getElementById('pm-srv-b-name');
+  if (elA) elA.textContent = shortA;
+  if (elB) elB.textContent = shortB;
+
+  const swapA = document.getElementById('pm-swap-a-label');
+  const swapB = document.getElementById('pm-swap-b-label');
+  if (swapA) swapA.textContent = shortA;
+  if (swapB) swapB.textContent = shortB;
+
+  // Highlight nút đang chọn
+  const btnA = document.getElementById('pm-srv-a');
+  const btnB = document.getElementById('pm-srv-b');
+  if (btnA) {
+    const sel = _pm.serverSide === 'a';
+    btnA.style.borderColor  = sel ? '#16a34a' : 'var(--g200)';
+    btnA.style.background   = sel ? '#dcfce7' : 'var(--g50)';
+    btnA.style.color        = sel ? '#15803d' : 'var(--g700)';
+  }
+  if (btnB) {
+    const sel = _pm.serverSide === 'b';
+    btnB.style.borderColor  = sel ? '#16a34a' : 'var(--g200)';
+    btnB.style.background   = sel ? '#dcfce7' : 'var(--g50)';
+    btnB.style.color        = sel ? '#15803d' : 'var(--g700)';
+  }
+
+  // Hiện/ẩn chọn người giao
+  const playerRow = document.getElementById('pm-player-row');
+  if (playerRow) playerRow.style.display = _pm.serverSide ? '' : 'none';
+
+  if (_pm.serverSide) {
+    const srvPlayers = _pm.serverSide === 'a' ? playersA : playersB;
+    const p0 = document.getElementById('pm-p0-name');
+    const p1 = document.getElementById('pm-p1-name');
+    if (p0) p0.textContent = srvPlayers[0] || 'VĐV 1';
+    if (p1) p1.textContent = srvPlayers[1] || 'VĐV 2';
+
+    // Highlight người giao đang chọn
+    const b0 = document.getElementById('pm-p0');
+    const b1 = document.getElementById('pm-p1');
+    if (b0) {
+      const sel = _pm.serverPlayerIdx === 0;
+      b0.style.borderColor = sel ? '#0369a1' : 'var(--g200)';
+      b0.style.background  = sel ? '#dbeafe' : 'var(--g50)';
+      b0.style.color       = sel ? '#1d4ed8' : 'var(--g700)';
+    }
+    if (b1) {
+      const sel = _pm.serverPlayerIdx === 1;
+      b1.style.borderColor = sel ? '#0369a1' : 'var(--g200)';
+      b1.style.background  = sel ? '#dbeafe' : 'var(--g50)';
+      b1.style.color       = sel ? '#1d4ed8' : 'var(--g700)';
+    }
+  }
+}
+
+function pmSetServer(side) {
+  _pm.serverSide = side;
+  _pm.serverPlayerIdx = 0; // reset về VĐV đầu tiên
+  // Áp dụng vào state
+  S.server = side;
+  S.serveNum = 2; S.isFirstServe = true; S.serverPlayerIdx = 0;
+  S.posA = [0,1]; S.posB = [0,1];
+  updatePrematchPanel();
+  render();
+}
+
+function pmSetServerPlayer(idx) {
+  _pm.serverPlayerIdx = idx;
+  S.serverPlayerIdx = idx;
+  // Đặt người giao vào Ô1 của đội họ
+  if (S.server === 'a') S.posA = [idx, 1-idx];
+  else                  S.posB = [idx, 1-idx];
+  updatePrematchPanel();
+  render();
+}
+
+function pmSwapPlayers(side) {
+  // Hoán đổi vị trí 2 VĐV của đội (Ô1 ↔ Ô2)
+  if (side === 'a') {
+    S.posA = [S.posA[1], S.posA[0]];
+    // Nếu đội A đang giao, cập nhật serverPlayerIdx theo
+    if (S.server === 'a') {
+      S.serverPlayerIdx = S.posA[0]; // server mới là người ở Ô1
+    }
+  } else {
+    S.posB = [S.posB[1], S.posB[0]];
+    if (S.server === 'b') {
+      S.serverPlayerIdx = S.posB[0];
+    }
+  }
+  _pm.serverPlayerIdx = S.serverPlayerIdx;
+  const m = S.currentMatch;
+  const side_name = side === 'a'
+    ? sn(m?.origTeamA || m?.teamA || 'Đội A')
+    : sn(m?.origTeamB || m?.teamB || 'Đội B');
+  toast(`↕ ${side_name}: đã đổi vị trí VĐV`, 1500);
+  updatePrematchPanel();
+  render();
+}
+
+// ── TOSS state ──
 const _toss = {
   step: 1,
   winner: null,   // 'a' | 'b'
