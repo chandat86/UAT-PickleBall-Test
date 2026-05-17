@@ -670,70 +670,77 @@ select, input { font-family: inherit; }
   <div style="display:flex;align-items:center;gap:7px;margin-bottom:14px">
     <div style="width:3px;height:20px;background:#0369a1;border-radius:2px"></div>
     <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:#0369a1;letter-spacing:.3px">THIẾT LẬP TRƯỚC TRẬN</span>
-    <div style="flex:1;height:1px;background:var(--g100)"></div>
   </div>
 
-  <!-- Section: Chọn đội -->
-  <div style="font-size:9px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Đội giao bóng</div>
+  <!-- Label section -->
+  <div style="font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px">Đội Giao Bóng</div>
+
+  <!-- Chọn đội -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+
     <button id="pm-srv-a" onclick="pmSetServer('a')"
-      style="padding:9px 6px;border-radius:10px;border:2px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:center">
-      <div style="font-size:9px;color:var(--g400);margin-bottom:2px" id="pm-srv-a-name">Đội A</div>
-      <div style="font-size:11px;font-weight:700;color:var(--g700)">🏓 Giao</div>
+      style="padding:8px 8px 7px;border-radius:10px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
+      <div style="font-size:8.5px;font-weight:800;color:#64748b;letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase">Giao Bóng</div>
+      <div style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45" id="pm-srv-a-name">Đội A</div>
     </button>
+
     <button id="pm-srv-b" onclick="pmSetServer('b')"
-      style="padding:9px 6px;border-radius:10px;border:2px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:center">
-      <div style="font-size:9px;color:var(--g400);margin-bottom:2px" id="pm-srv-b-name">Đội B</div>
-      <div style="font-size:11px;font-weight:700;color:var(--g700)">🏓 Giao</div>
+      style="padding:8px 8px 7px;border-radius:10px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
+      <div style="font-size:8.5px;font-weight:800;color:#64748b;letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase">Giao Bóng</div>
+      <div style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45" id="pm-srv-b-name">Đội B</div>
     </button>
+
   </div>
 
-  <!-- Section: Giao / Đỡ (hiện sau khi chọn đội) -->
+  <!-- Giao / Đỡ -->
   <div id="pm-player-row" style="display:none">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
 
-      <!-- Cột: Người giao -->
+      <!-- Người giao -->
       <div>
-        <div style="font-size:9px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Người giao bóng</div>
+        <div style="font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px">Người Giao Bóng</div>
         <div style="display:flex;flex-direction:column;gap:5px">
           <button id="pm-p0" onclick="pmSetServerPlayer(0)"
-            style="padding:7px 6px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;font-size:10px;font-weight:700;color:var(--g700);text-align:left;line-height:1.35">
-            <span id="pm-p0-name">VĐV 1</span>
+            style="padding:8px 8px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
+            <span id="pm-p0-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45;display:block">VĐV 1</span>
           </button>
           <button id="pm-p1" onclick="pmSetServerPlayer(1)"
-            style="padding:7px 6px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;font-size:10px;font-weight:700;color:var(--g700);text-align:left;line-height:1.35">
-            <span id="pm-p1-name">VĐV 2</span>
+            style="padding:8px 8px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
+            <span id="pm-p1-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45;display:block">VĐV 2</span>
           </button>
         </div>
       </div>
 
-      <!-- Cột: Người đỡ -->
+      <!-- Người đỡ -->
       <div>
-        <div style="font-size:9px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Người đỡ bóng</div>
+        <div style="font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px">Người Đỡ Bóng</div>
         <div style="display:flex;flex-direction:column;gap:5px">
           <button id="pm-r0" onclick="pmSetReceiverPlayer(0)"
-            style="padding:7px 6px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;font-size:10px;font-weight:700;color:var(--g700);text-align:left;line-height:1.35">
-            <span id="pm-r0-name">VĐV 1</span>
+            style="padding:8px 8px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
+            <span id="pm-r0-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45;display:block">VĐV 1</span>
           </button>
           <button id="pm-r1" onclick="pmSetReceiverPlayer(1)"
-            style="padding:7px 6px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;font-size:10px;font-weight:700;color:var(--g700);text-align:left;line-height:1.35">
-            <span id="pm-r1-name">VĐV 2</span>
+            style="padding:8px 8px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
+            <span id="pm-r1-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45;display:block">VĐV 2</span>
           </button>
         </div>
       </div>
+
     </div>
   </div>
 
-  <!-- Section: Hoán đổi vị trí -->
-  <div style="font-size:9px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Hoán đổi vị trí VĐV (Ô1 ↔ Ô2)</div>
+  <!-- Hoán đổi -->
+  <div style="font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px">Hoán Đổi Vị Trí VĐV (Ô1 ↔ Ô2)</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
     <button onclick="pmSwapPlayers('a')"
-      style="padding:8px 5px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;font-size:10px;font-weight:700;color:var(--g600);text-align:center;transition:all .15s">
-      ↕ <span id="pm-swap-a-label">Đội A</span>
+      style="padding:8px 6px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;text-align:left;transition:all .15s">
+      <div style="font-size:8.5px;color:var(--g400);margin-bottom:2px">↕</div>
+      <div style="font-size:10px;font-weight:700;color:var(--g700);line-height:1.4" id="pm-swap-a-label">Đội A</div>
     </button>
     <button onclick="pmSwapPlayers('b')"
-      style="padding:8px 5px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;font-size:10px;font-weight:700;color:var(--g600);text-align:center;transition:all .15s">
-      ↕ <span id="pm-swap-b-label">Đội B</span>
+      style="padding:8px 6px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;text-align:left;transition:all .15s">
+      <div style="font-size:8.5px;color:var(--g400);margin-bottom:2px">↕</div>
+      <div style="font-size:10px;font-weight:700;color:var(--g700);line-height:1.4" id="pm-swap-b-label">Đội B</div>
     </button>
   </div>
 
@@ -2924,21 +2931,19 @@ function updatePrematchPanel() {
   const playersA = (m.playersA && m.playersA[0]) ? m.playersA : S.playersA;
   const playersB = (m.playersB && m.playersB[0]) ? m.playersB : S.playersB;
 
-  // Helper: tên ngắn đội
   const shortA = sn(m.origTeamA || m.teamA);
   const shortB = sn(m.origTeamB || m.teamB);
 
-  // Tên đội trên nút giao bóng
-  _setText('pm-srv-a-name', shortA);
-  _setText('pm-srv-b-name', shortB);
+  // Tên đội nút giao — 2 dòng mỗi VĐV riêng
+  _setTeamLines('pm-srv-a-name', playersA, shortA);
+  _setTeamLines('pm-srv-b-name', playersB, shortB);
   _setText('pm-swap-a-label', shortA);
   _setText('pm-swap-b-label', shortB);
 
-  // Highlight nút đội giao được chọn
+  // Highlight nút đội giao
   _pmHighlight('pm-srv-a', _pm.serverSide === 'a', '#0369a1', '#dbeafe');
   _pmHighlight('pm-srv-b', _pm.serverSide === 'b', '#0369a1', '#dbeafe');
 
-  // Hiện/ẩn phần chọn người giao/đỡ
   const playerRow = document.getElementById('pm-player-row');
   if (playerRow) playerRow.style.display = _pm.serverSide ? '' : 'none';
 
@@ -2947,18 +2952,36 @@ function updatePrematchPanel() {
     const srvPlayers = _pm.serverSide === 'a' ? playersA : playersB;
     const rcvPlayers = rcvSide        === 'a' ? playersA : playersB;
 
-    // Tên người giao
-    _setText('pm-p0-name', srvPlayers[0] || 'VĐV 1');
-    _setText('pm-p1-name', srvPlayers[1] || 'VĐV 2');
+    // Người giao — mỗi VĐV 1 dòng
+    _setPlayerLine('pm-p0-name', srvPlayers[0] || 'VĐV 1');
+    _setPlayerLine('pm-p1-name', srvPlayers[1] || 'VĐV 2');
     _pmHighlight('pm-p0', _pm.serverPlayerIdx === 0, '#0369a1', '#dbeafe');
     _pmHighlight('pm-p1', _pm.serverPlayerIdx === 1, '#0369a1', '#dbeafe');
 
-    // Tên người đỡ
-    _setText('pm-r0-name', rcvPlayers[0] || 'VĐV 1');
-    _setText('pm-r1-name', rcvPlayers[1] || 'VĐV 2');
+    // Người đỡ — mỗi VĐV 1 dòng
+    _setPlayerLine('pm-r0-name', rcvPlayers[0] || 'VĐV 1');
+    _setPlayerLine('pm-r1-name', rcvPlayers[1] || 'VĐV 2');
     _pmHighlight('pm-r0', _pm.receiverPlayerIdx === 0, '#15803d', '#dcfce7');
     _pmHighlight('pm-r1', _pm.receiverPlayerIdx === 1, '#15803d', '#dcfce7');
   }
+}
+
+// Hiển thị 2 VĐV mỗi người 1 dòng trong nút đội
+function _setTeamLines(id, players, fallback) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const p0 = players[0] || fallback;
+  const p1 = players[1];
+  if (p1) {
+    el.innerHTML = `<span style="display:block">${p0}</span><span style="display:block;margin-top:1px">${p1}</span>`;
+  } else {
+    el.textContent = p0;
+  }
+}
+
+function _setPlayerLine(id, name) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = name;
 }
 
 function _setText(id, text) {
@@ -2969,9 +2992,9 @@ function _setText(id, text) {
 function _pmHighlight(id, active, color, bg) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.style.borderColor = active ? color    : 'var(--g100)';
-  el.style.background  = active ? bg       : 'var(--g50)';
-  el.style.color       = active ? color    : 'var(--g700)';
+  el.style.borderColor = active ? color : 'var(--g100)';
+  el.style.background  = active ? bg    : 'var(--g50)';
+  el.style.color       = active ? color : 'var(--g800)';
 }
 
 function pmSetServer(side) {
