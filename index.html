@@ -255,7 +255,35 @@ select, input { font-family: inherit; }
 /* ── EMPTY ── */
 .empty-msg { text-align:center; padding:14px; color:var(--g400); font-size:12px; }
 
-/* ── BỐC THĂM ── */
+/* ── LICENSE SCREEN ── */
+#license-screen {
+  position:fixed; inset:0; z-index:9999;
+  background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.lic-box {
+  background:#fff; border-radius:20px; padding:28px 24px;
+  width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,.4);
+  text-align:center;
+}
+.lic-logo { font-size:44px; margin-bottom:8px; display:block; }
+.lic-title { font-family:'Oswald',sans-serif; font-size:22px; font-weight:700; color:#0f172a; margin-bottom:4px; }
+.lic-sub { font-size:12px; color:#64748b; margin-bottom:20px; }
+.lic-inp { width:100%; box-sizing:border-box; border:2px solid #e2e8f0; border-radius:10px; padding:11px 14px; font-size:18px; font-family:'Oswald',sans-serif; font-weight:700; text-align:center; letter-spacing:3px; text-transform:uppercase; outline:none; transition:border .2s; }
+.lic-inp:focus { border-color:#22c55e; }
+.lic-inp.error { border-color:#ef4444; animation:shake .3s; }
+.lic-btn { width:100%; margin-top:12px; border:none; background:#22c55e; color:#fff; border-radius:10px; padding:12px; font-family:'Oswald',sans-serif; font-size:16px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:background .15s; }
+.lic-btn:hover { background:#16a34a; }
+.lic-btn:disabled { background:#94a3b8; cursor:not-allowed; }
+.lic-status { margin-top:10px; font-size:12px; min-height:18px; border-radius:8px; padding:6px 10px; display:none; }
+.lic-status.ok { display:block; background:#f0fdf4; color:#16a34a; }
+.lic-status.err { display:block; background:#fef2f2; color:#dc2626; }
+.lic-status.loading { display:block; background:#f8fafc; color:#64748b; }
+.lic-info { margin-top:16px; padding-top:14px; border-top:1px solid #f1f5f9; font-size:11px; color:#94a3b8; }
+.lic-saved-box { background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:12px; padding:12px; margin-bottom:14px; text-align:left; }
+.lic-saved-name { font-size:14px; font-weight:700; color:#16a34a; }
+.lic-saved-exp { font-size:11px; color:#64748b; margin-top:2px; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 .toss-team-btn { border:2.5px solid var(--g200); border-radius:14px; padding:12px 10px; background:var(--g50); cursor:pointer; transition:all .18s; font-family:inherit; width:100%; text-align:center; }
 .toss-team-btn:hover,.toss-team-btn.selected { border-color:var(--green); background:var(--green-bg); }
 .toss-team-btn .toss-team-name { font-size:13px; font-weight:700; color:var(--g900); line-height:1.35; }
@@ -3160,6 +3188,128 @@ function toast(msg, duration) {
 }
 
 // ══════════════════════════════════════════
+//  LICENSE SYSTEM
+// ══════════════════════════════════════════
+const LIC_KEY      = 'pb_license_v1';
+const LIC_CHECK_MS = 6 * 60 * 60 * 1000; // re-validate mỗi 6 giờ
+
+function _deviceId() {
+  let id = localStorage.getItem('pb_device_id');
+  if (!id) {
+    id = 'DEV-' + Math.random().toString(36).slice(2,10).toUpperCase();
+    localStorage.setItem('pb_device_id', id);
+  }
+  return id;
+}
+
+function licLoad() {
+  try { return JSON.parse(localStorage.getItem(LIC_KEY)||'null'); } catch(e){ return null; }
+}
+
+function licSave(data) {
+  localStorage.setItem(LIC_KEY, JSON.stringify({...data, checkedAt: Date.now()}));
+}
+
+function licClear() {
+  localStorage.removeItem(LIC_KEY);
+}
+
+async function licValidate() {
+  const inp  = document.getElementById('lic-inp');
+  const btn  = document.getElementById('lic-btn');
+  const stat = document.getElementById('lic-status');
+  const code = inp.value.trim().toUpperCase();
+
+  if (!code) { _licStatus('err', '⚠️ Nhập mã trước!'); return; }
+  if (!GS_URL) { _licStatus('err', '⚠️ Chưa cấu hình URL GSheets!'); return; }
+
+  btn.disabled = true;
+  _licStatus('loading', '⏳ Đang xác thực...');
+  inp.classList.remove('error');
+
+  try {
+    const url = `${GS_URL}?action=validate&code=${encodeURIComponent(code)}&device=${encodeURIComponent(_deviceId())}`;
+    const res  = await fetch(url, {cache:'no-store'});
+    const data = await res.json();
+
+    if (data.ok && data.valid) {
+      licSave({code, name: data.name, expire: data.expire});
+      _licStatus('ok', `✅ Hợp lệ — ${data.name} · HH: ${data.expire}`);
+      setTimeout(licEnter, 900);
+    } else {
+      inp.classList.add('error');
+      _licStatus('err', `❌ ${data.reason||'Mã không hợp lệ'}`);
+      btn.disabled = false;
+    }
+  } catch(e) {
+    _licStatus('err', '⚠️ Lỗi kết nối — kiểm tra mạng và URL GSheets');
+    btn.disabled = false;
+  }
+}
+
+function _licStatus(type, msg) {
+  const el = document.getElementById('lic-status');
+  el.className = `lic-status ${type}`;
+  el.textContent = msg;
+}
+
+function licEnter() {
+  document.getElementById('license-screen').style.display = 'none';
+}
+
+async function licCheckOnStart() {
+  const saved = licLoad();
+  const screen = document.getElementById('license-screen');
+  const inp    = document.getElementById('lic-inp');
+  const savedBox = document.getElementById('lic-saved-box');
+  const btn    = document.getElementById('lic-btn');
+
+  if (saved) {
+    // Hiện thông tin đã lưu
+    savedBox.style.display = 'block';
+    document.getElementById('lic-saved-name').textContent = `🏓 ${saved.name||saved.code}`;
+    document.getElementById('lic-saved-exp').textContent  = `Hết hạn: ${saved.expire} · Mã: ${saved.code}`;
+    inp.value = saved.code;
+    btn.textContent = '↺ Đăng nhập lại';
+
+    // Nếu chưa đến lúc check lại → vào thẳng
+    const sinceCheck = Date.now() - (saved.checkedAt||0);
+    if (sinceCheck < LIC_CHECK_MS) {
+      licEnter();
+      return;
+    }
+
+    // Đến lúc re-validate ngầm
+    if (GS_URL) {
+      try {
+        const url  = `${GS_URL}?action=validate&code=${encodeURIComponent(saved.code)}&device=${encodeURIComponent(_deviceId())}`;
+        const res  = await fetch(url, {cache:'no-store'});
+        const data = await res.json();
+        if (data.ok && data.valid) {
+          licSave({code:saved.code, name:data.name, expire:data.expire});
+          licEnter();
+          return;
+        } else {
+          // License hết hạn hoặc bị thu hồi → hiện màn hình
+          licClear();
+          _licStatus('err', `❌ ${data.reason||'Mã không còn hợp lệ, vui lòng nhập lại'}`);
+        }
+      } catch(e) {
+        // Lỗi mạng → cho vào tạm (offline grace)
+        licEnter();
+        return;
+      }
+    } else {
+      // Chưa có GS_URL → vào tạm
+      licEnter();
+      return;
+    }
+  }
+  // Không có saved → hiện màn hình nhập mã
+  screen.style.display = 'flex';
+}
+
+// ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
 initGsUrl();
@@ -3186,6 +3336,33 @@ document.getElementById('sel-bang').addEventListener('change', renderMatchGrid);
 
 // Làm mới từ GSheets ngầm
 if (GS_URL) setTimeout(async () => { await loadAllFromGS(); startAutoPoll(); }, 300);
+
+// Kiểm tra license khi khởi động
+licCheckOnStart();
 </script>
+<!-- ── LICENSE SCREEN ── -->
+<div id="license-screen">
+  <div class="lic-box">
+    <span class="lic-logo">🏓</span>
+    <div class="lic-title">DA NANG REFEREE</div>
+    <div class="lic-sub">Pickleball Scoring System</div>
+
+    <!-- Đã có license hợp lệ → hiện thông tin -->
+    <div id="lic-saved-box" class="lic-saved-box" style="display:none">
+      <div class="lic-saved-name" id="lic-saved-name"></div>
+      <div class="lic-saved-exp" id="lic-saved-exp"></div>
+    </div>
+
+    <input class="lic-inp" id="lic-inp" type="text" placeholder="NHẬP MÃ" maxlength="20"
+      onkeydown="if(event.key==='Enter') licValidate()"
+      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+
+    <button class="lic-btn" id="lic-btn" onclick="licValidate()">✓ XÁC NHẬN MÃ</button>
+    <div class="lic-status" id="lic-status"></div>
+
+    <div class="lic-info">Liên hệ admin để nhận mã kích hoạt</div>
+  </div>
+</div>
+
 </body>
 </html>
