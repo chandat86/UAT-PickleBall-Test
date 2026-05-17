@@ -620,7 +620,7 @@ select, input { font-family: inherit; }
     <div class="mi-tag" id="mi-tag">–</div>
     <div class="score-announce" id="score-announce">0-0-2</div>
     <button class="ctr-btn" onclick="swapSides()">⇄ Đổi sân</button>
-    <button class="ctr-btn-serve" id="btn-transfer-serve" onclick="transferServe()" disabled>ĐỔI GIAO</button>
+    <button class="ctr-btn-serve" id="btn-transfer-serve" onclick="transferServe()">ĐỔI GIAO</button>
     <div class="serve-dots-center" id="serve-dots-center"></div>
     <!-- Game pill xuống dưới -->
     <div class="game-pill" id="game-pill">Game 1</div>
@@ -672,76 +672,69 @@ select, input { font-family: inherit; }
     <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:#0369a1;letter-spacing:.3px">THIẾT LẬP TRƯỚC TRẬN</span>
   </div>
 
-  <!-- Label section -->
+  <!-- Label -->
   <div style="font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px">Đội Giao Bóng</div>
 
-  <!-- Chọn đội -->
+  <!-- Chọn đội giao -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
 
     <button id="pm-srv-a" onclick="pmSetServer('a')"
-      style="padding:8px 8px 7px;border-radius:10px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
-      <div style="font-size:8.5px;font-weight:800;color:#64748b;letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase">Giao Bóng</div>
-      <div style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45" id="pm-srv-a-name">Đội A</div>
+      style="padding:0;border-radius:10px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left;overflow:hidden">
+      <div style="background:#e2e8f0;padding:5px 8px;text-align:center">
+        <span style="font-size:9px;font-weight:800;color:#475569;letter-spacing:.8px;text-transform:uppercase">GIAO BÓNG</span>
+      </div>
+      <div style="padding:7px 8px;font-size:10px;font-weight:700;color:var(--g800);line-height:1.45" id="pm-srv-a-name">Đội A</div>
     </button>
 
     <button id="pm-srv-b" onclick="pmSetServer('b')"
-      style="padding:8px 8px 7px;border-radius:10px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
-      <div style="font-size:8.5px;font-weight:800;color:#64748b;letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase">Giao Bóng</div>
-      <div style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45" id="pm-srv-b-name">Đội B</div>
+      style="padding:0;border-radius:10px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left;overflow:hidden">
+      <div style="background:#e2e8f0;padding:5px 8px;text-align:center">
+        <span style="font-size:9px;font-weight:800;color:#475569;letter-spacing:.8px;text-transform:uppercase">GIAO BÓNG</span>
+      </div>
+      <div style="padding:7px 8px;font-size:10px;font-weight:700;color:var(--g800);line-height:1.45" id="pm-srv-b-name">Đội B</div>
     </button>
 
   </div>
 
-  <!-- Giao / Đỡ -->
-  <div id="pm-player-row" style="display:none">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+  <!-- Khung Người giao + Người đỡ (hiện sau khi chọn đội) -->
+  <div id="pm-player-row" style="display:none;margin-bottom:14px">
+    <div style="border:1.5px solid var(--g100);border-radius:12px;overflow:hidden">
 
-      <!-- Người giao -->
-      <div>
-        <div style="font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px">Người Giao Bóng</div>
-        <div style="display:flex;flex-direction:column;gap:5px">
+      <!-- Header khung -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;background:#f1f5f9">
+        <div style="padding:6px 10px;font-size:9px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:.6px;border-right:1px solid var(--g100)">Người Giao Bóng</div>
+        <div style="padding:6px 10px;font-size:9px;font-weight:800;color:#15803d;text-transform:uppercase;letter-spacing:.6px">Người Đỡ Bóng</div>
+      </div>
+
+      <!-- VĐV rows -->
+      <div style="display:grid;grid-template-columns:1fr 1fr">
+
+        <!-- Cột giao -->
+        <div style="border-right:1px solid var(--g100)">
           <button id="pm-p0" onclick="pmSetServerPlayer(0)"
-            style="padding:8px 8px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
-            <span id="pm-p0-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45;display:block">VĐV 1</span>
+            style="width:100%;padding:8px 10px;border:none;border-bottom:1px solid var(--g100);background:transparent;cursor:pointer;transition:all .15s;text-align:left">
+            <span id="pm-p0-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.4;display:block">VĐV 1</span>
           </button>
           <button id="pm-p1" onclick="pmSetServerPlayer(1)"
-            style="padding:8px 8px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
-            <span id="pm-p1-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45;display:block">VĐV 2</span>
+            style="width:100%;padding:8px 10px;border:none;background:transparent;cursor:pointer;transition:all .15s;text-align:left">
+            <span id="pm-p1-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.4;display:block">VĐV 2</span>
           </button>
         </div>
-      </div>
 
-      <!-- Người đỡ -->
-      <div>
-        <div style="font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px">Người Đỡ Bóng</div>
-        <div style="display:flex;flex-direction:column;gap:5px">
+        <!-- Cột đỡ -->
+        <div>
           <button id="pm-r0" onclick="pmSetReceiverPlayer(0)"
-            style="padding:8px 8px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
-            <span id="pm-r0-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45;display:block">VĐV 1</span>
+            style="width:100%;padding:8px 10px;border:none;border-bottom:1px solid var(--g100);background:transparent;cursor:pointer;transition:all .15s;text-align:left">
+            <span id="pm-r0-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.4;display:block">VĐV 1</span>
           </button>
           <button id="pm-r1" onclick="pmSetReceiverPlayer(1)"
-            style="padding:8px 8px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;transition:all .15s;text-align:left">
-            <span id="pm-r1-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.45;display:block">VĐV 2</span>
+            style="width:100%;padding:8px 10px;border:none;background:transparent;cursor:pointer;transition:all .15s;text-align:left">
+            <span id="pm-r1-name" style="font-size:10px;font-weight:700;color:var(--g800);line-height:1.4;display:block">VĐV 2</span>
           </button>
         </div>
+
       </div>
-
     </div>
-  </div>
-
-  <!-- Hoán đổi -->
-  <div style="font-size:9.5px;font-weight:800;color:#1e293b;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px">Hoán Đổi Vị Trí VĐV (Ô1 ↔ Ô2)</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
-    <button onclick="pmSwapPlayers('a')"
-      style="padding:8px 6px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;text-align:left;transition:all .15s">
-      <div style="font-size:8.5px;color:var(--g400);margin-bottom:2px">↕</div>
-      <div style="font-size:10px;font-weight:700;color:var(--g700);line-height:1.4" id="pm-swap-a-label">Đội A</div>
-    </button>
-    <button onclick="pmSwapPlayers('b')"
-      style="padding:8px 6px;border-radius:9px;border:1.5px solid var(--g100);background:var(--g50);cursor:pointer;text-align:left;transition:all .15s">
-      <div style="font-size:8.5px;color:var(--g400);margin-bottom:2px">↕</div>
-      <div style="font-size:10px;font-weight:700;color:var(--g700);line-height:1.4" id="pm-swap-b-label">Đội B</div>
-    </button>
   </div>
 
   <!-- Divider -->
@@ -2025,14 +2018,16 @@ function _renderServeBadgeCenter() {
     const n = S.isFirstServe ? 2 : S.serveNum;
     dots.innerHTML = '<div class="serve-dot-lg"></div>'.repeat(n);
   }
-  if (btn) btn.disabled = !matchStarted;
+  // Nút ĐỔI GIAO luôn active (dùng được cả trước khi bắt đầu)
+  if (btn) btn.disabled = false;
   _renderScoreAnnounce();
 }
 
 // ── Nút Đổi giao bóng (trọng tài bấm khi đội đang giao thua rally) ──
 // Theo luật: đội nhận thắng rally → bấm nút này để chuyển quyền giao
 function transferServe() {
-  if (!matchStarted) { toast('⚠️ Nhấn Bắt đầu trước!'); return; }
+  // Cho phép đổi giao cả trước và sau khi bắt đầu (để thiết lập trước trận)
+  if (!S.currentMatch) { toast('⚠️ Chưa chọn trận!'); return; }
   const snap = JSON.stringify({
     a:S.a, b:S.b, server:S.server, serveNum:S.serveNum,
     isFirstServe:S.isFirstServe, serverPlayerIdx:S.serverPlayerIdx, posA:[...S.posA], posB:[...S.posB]
@@ -2995,6 +2990,14 @@ function _pmHighlight(id, active, color, bg) {
   el.style.borderColor = active ? color : 'var(--g100)';
   el.style.background  = active ? bg    : 'var(--g50)';
   el.style.color       = active ? color : 'var(--g800)';
+  // Cập nhật header GIAO BÓNG nếu có (nút đội)
+  const hdr = el.querySelector('div:first-child');
+  if (hdr && hdr.querySelector('span')) {
+    if (id === 'pm-srv-a' || id === 'pm-srv-b') {
+      hdr.style.background = active ? (color === '#0369a1' ? '#dbeafe' : '#dcfce7') : '#e2e8f0';
+      hdr.querySelector('span').style.color = active ? color : '#475569';
+    }
+  }
 }
 
 function pmSetServer(side) {
