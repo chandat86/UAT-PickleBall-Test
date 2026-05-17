@@ -142,7 +142,7 @@ select, input { font-family: inherit; }
 /* ── PLAYERS LIST — cố định, không co giãn ── */
 .players-list { width:100%; margin-bottom:3px; }
 .player-row {
-  display:flex; align-items:center; gap:2px;
+  display:flex; align-items:flex-start; gap:3px;
   padding:3px 4px; border-radius:6px; margin-bottom:2px;
   border:1.5px solid transparent; background:transparent;
   transition:all .2s; min-height:24px; overflow:hidden;
@@ -158,26 +158,26 @@ select, input { font-family: inherit; }
 }
 .player-row.is-server .player-name { color:var(--green-dk); font-weight:700; }
 .team-card.winner .player-row.is-server .player-name { color:var(--amber-dk); }
-/* Serve dots — vòng tròn cam */
-.serve-balls { display:flex; gap:2px; align-items:center; flex-shrink:0; }
-.serve-dot { width:9px; height:9px; border-radius:50%; background:#f59e0b; display:inline-block; flex-shrink:0; }
-/* Ô badge — màu indigo khác tên */
+/* Serve dots — nhỏ, nằm bên phải tên, không che */
+.serve-balls { display:flex; gap:2px; align-items:center; flex-shrink:0; margin-top:2px; }
+.serve-dot { width:8px; height:8px; border-radius:50%; background:#f59e0b; display:inline-block; flex-shrink:0; }
+/* Ô badge — xanh dương/teal thay indigo */
 .pos-badge {
   font-size:8px; font-weight:800; font-family:'Oswald',sans-serif;
-  color:#fff; background:#6366f1; border-radius:4px;
-  padding:1px 4px; flex-shrink:0; letter-spacing:.1px;
+  color:#fff; background:#0369a1; border-radius:4px;
+  padding:1px 4px; flex-shrink:0; letter-spacing:.1px; margin-top:2px;
 }
-.pos-badge-1 { background:#6366f1; }  /* Ô1 — indigo */
-.pos-badge-2 { background:#8b5cf6; }  /* Ô2 — violet nhạt hơn */
+.pos-badge-1 { background:#0369a1; }  /* Ô1 — xanh dương đậm */
+.pos-badge-2 { background:#0891b2; }  /* Ô2 — teal */
 
-/* Score announce: điểm-điểm-lượt ở giữa */
+/* Score announce: điểm-điểm-lượt — xanh dương */
 .score-announce {
   font-family:'Oswald',sans-serif;
-  font-size:13px; font-weight:800; color:#fff;
-  background:#15803d; border-radius:10px;
-  padding:3px 8px; white-space:nowrap;
+  font-size:14px; font-weight:900; color:#fff;
+  background:#1d4ed8; border-radius:12px;
+  padding:5px 10px; white-space:nowrap;
   letter-spacing:.5px; text-align:center;
-  box-shadow:0 1px 4px rgba(0,0,0,.15);
+  box-shadow:0 2px 6px rgba(29,78,216,.3);
 }
 .score-announce.first-serve { background:#d97706; }
 
@@ -200,13 +200,14 @@ select, input { font-family: inherit; }
 .res-scroll-body  { max-height:260px; overflow-y:auto; }
 
 /* ── CENTER COL ── */
-.ctr-col { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:4px; padding-top:4px; }
-/* Match info — lên trên, màu tím bold */
-.mi-tag { font-size:9px; font-weight:700; color:#7c3aed; text-align:center; line-height:1.35; max-width:70px; word-break:break-word; margin-bottom:1px; }
-.game-pill { background:var(--green-dk); color:#fff; font-family:'Oswald',sans-serif; font-size:11px; font-weight:700; padding:2px 7px; border-radius:20px; white-space:nowrap; }
-/* Đổi sân — to hơn */
-.ctr-btn { width:100%; border:1.5px solid var(--g200); border-radius:7px; background:var(--card); padding:5px 2px; font-size:11px; font-weight:700; color:var(--g700); transition:all .15s; }
-.ctr-btn:hover { border-color:var(--green); color:var(--green-dk); }
+.ctr-col { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:5px; padding-top:4px; }
+/* Match info — xanh dương bold, to, có bảng đấu dưới */
+.mi-tag { font-size:10.5px; font-weight:900; color:#1d4ed8; text-align:center; line-height:1.35; max-width:70px; word-break:break-word; margin-bottom:0; letter-spacing:.2px; }
+.mi-bang { display:block; font-size:9px; font-weight:600; color:#6b7280; margin-top:1px; }
+.game-pill { background:#374151; color:#fff; font-family:'Oswald',sans-serif; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+/* Đổi sân — to hơn nữa */
+.ctr-btn { width:100%; border:2px solid var(--g300); border-radius:9px; background:var(--card); padding:7px 2px; font-size:12px; font-weight:700; color:var(--g700); transition:all .15s; }
+.ctr-btn:hover { border-color:#1d4ed8; color:#1d4ed8; }
 /* ĐỔI GIAO — cam, chữ to, không icon */
 .ctr-btn-serve {
   width:100%; border:none; border-radius:8px;
@@ -573,8 +574,7 @@ select, input { font-family: inherit; }
 
 <!-- ── SWAP NOTICE ── -->
 <div class="swap-notice" id="swap-notice">
-  <span id="swap-notice-txt">⇄ ĐẾN ĐIỂM ĐỔI SÂN!</span>
-  <button onclick="confirmSwap()" style="margin-left:8px;background:#fff;color:#15803d;border:none;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">✔ Đổi sân ngay</button>
+  <span id="swap-notice-txt">⇄ ĐÃ ĐỔI SÂN!</span>
 </div>
 
 <!-- ── WIN BANNER ── -->
@@ -616,7 +616,6 @@ select, input { font-family: inherit; }
   <!-- Center -->
   <div class="ctr-col">
     <div class="mi-tag" id="mi-tag">–</div>
-    <!-- Tỉ số dạng 1-0-2 -->
     <div class="score-announce" id="score-announce">0-0-2</div>
     <button class="ctr-btn" onclick="swapSides()">⇄ Đổi sân</button>
     <button class="ctr-btn-serve" id="btn-transfer-serve" onclick="transferServe()" disabled>ĐỔI GIAO</button>
@@ -1985,20 +1984,13 @@ function checkWin() {
 }
 
 // Auto swap court — đổi sân khi 1 trong 2 đội đạt ngưỡng điểm
-// ── Xác nhận đổi sân khi đến điểm swap ──
-// Giữ nguyên QUYỀN GIAO theo đội (server không đổi đội, chỉ vị trí trên màn hình thay đổi)
+// ── Đổi sân thủ công (nút ⇄ Đổi sân) ──
 function confirmSwap() {
   const notice = document.getElementById('swap-notice');
   if (notice) { clearTimeout(notice._hideTimer); notice.classList.remove('show'); }
 
-  const swapAt = RULES[winRule].swap;
-
-  // Đổi vị trí 2 đội trên màn hình (trái ↔ phải)
   [S.a, S.b] = [S.b, S.a];
-  // Quyền giao theo đội: đội A giao vẫn là 'a', nhưng giờ hiện bên phải
-  // → đổi S.server để icon giao vẫn theo đúng đội
   S.server = S.server === 'a' ? 'b' : 'a';
-
   if (S.currentMatch) {
     [S.currentMatch.teamA, S.currentMatch.teamB] = [S.currentMatch.teamB, S.currentMatch.teamA];
     [S.currentMatch.playersA, S.currentMatch.playersB] = [S.currentMatch.playersB, S.currentMatch.playersA];
@@ -2007,19 +1999,15 @@ function confirmSwap() {
     S.currentMatch.origSideA = S.currentMatch.origSideA === 'a' ? 'b' : 'a';
   }
   [S.posA, S.posB] = [S.posB, S.posA];
-
-  pushLog(`⇄ ĐỔI SÂN (${swapAt} điểm) — đã xác nhận`, null);
+  pushLog('⇄ Đổi sân thủ công', null);
   navigator.vibrate && navigator.vibrate([200, 80, 200]);
   render();
-  // Sau khi đổi, hiện thông báo nhỏ
   if (notice) {
-    notice.querySelector('#swap-notice-txt').textContent = '✅ Đã đổi sân!';
+    const txt = notice.querySelector('#swap-notice-txt');
+    if (txt) txt.textContent = '✅ Đã đổi sân!';
     notice.classList.add('show');
     clearTimeout(notice._hideTimer);
-    notice._hideTimer = setTimeout(() => {
-      notice.classList.remove('show');
-      notice.querySelector('#swap-notice-txt').textContent = '⇄ ĐẾN ĐIỂM ĐỔI SÂN!';
-    }, 2000);
+    notice._hideTimer = setTimeout(() => notice.classList.remove('show'), 2000);
   }
 }
 
@@ -2033,12 +2021,29 @@ function checkAutoSwap() {
 
   if (!swapNotified && hi >= swapAt) {
     swapNotified = true;
+
+    // TỰ ĐỘNG đổi sân ngay — không cần bấm nút
+    [S.a, S.b] = [S.b, S.a];
+    S.server = S.server === 'a' ? 'b' : 'a';
+    if (S.currentMatch) {
+      [S.currentMatch.teamA, S.currentMatch.teamB] = [S.currentMatch.teamB, S.currentMatch.teamA];
+      [S.currentMatch.playersA, S.currentMatch.playersB] = [S.currentMatch.playersB, S.currentMatch.playersA];
+      S.playersA = S.currentMatch.playersA;
+      S.playersB = S.currentMatch.playersB;
+      S.currentMatch.origSideA = S.currentMatch.origSideA === 'a' ? 'b' : 'a';
+    }
+    [S.posA, S.posB] = [S.posB, S.posA];
+
+    // Hiển thị thông báo + rung
     if (notice) {
+      const txt = notice.querySelector('#swap-notice-txt');
+      if (txt) txt.textContent = `⇄ ĐÃ ĐỔI SÂN (${swapAt} điểm)`;
       notice.classList.add('show');
       navigator.vibrate && navigator.vibrate([300, 100, 300, 100, 300]);
       clearTimeout(notice._hideTimer);
+      notice._hideTimer = setTimeout(() => notice.classList.remove('show'), 4000);
     }
-    pushLog(`⚠️ ĐẾN ${swapAt} ĐIỂM — NHẤN ĐỔI SÂN`, null);
+    pushLog(`⇄ TỰ ĐỘNG ĐỔI SÂN (${swapAt} điểm)`, null);
   }
 }
 
@@ -2413,23 +2418,7 @@ function setServe(n) {
 }
 function toggleServe() { S.server=S.server==='a'?'b':'a'; render(); }
 
-function swapSides() {
-  [S.a,S.b]=[S.b,S.a];
-  S.server=S.server==='a'?'b':'a';
-  if (S.currentMatch) {
-    [S.currentMatch.teamA,S.currentMatch.teamB]=[S.currentMatch.teamB,S.currentMatch.teamA];
-    [S.currentMatch.playersA, S.currentMatch.playersB]=[S.currentMatch.playersB, S.currentMatch.playersA];
-    S.playersA = S.currentMatch.playersA;
-    S.playersB = S.currentMatch.playersB;
-    S.currentMatch.origSideA = S.currentMatch.origSideA === 'a' ? 'b' : 'a';
-  }
-  // Đổi sân: posA/posB theo đội — reset về chuẩn
-  [S.posA, S.posB] = [S.posB, S.posA];
-  document.getElementById('swap-notice').classList.remove('show');
-  pushLog('⇄ Đổi sân', null);
-  logToGS('⇄ Đổi sân', '');
-  render();
-}
+function swapSides() { confirmSwap(); }
 
 function undo() {
   if (!S.history.length) return;
@@ -2709,7 +2698,11 @@ function loadMatch(idx) {
   if (snotice) snotice.classList.remove('show');
   const banner = document.getElementById('win-banner');
   if (banner) { clearTimeout(banner._hideTimer); banner.classList.remove('show'); }
-  document.getElementById('mi-tag').textContent=`${m.code}\n${m.noidung}`;
+  // mi-tag: tên trận bold + bảng đấu dưới
+  const miEl = document.getElementById('mi-tag');
+  if (miEl) {
+    miEl.innerHTML = `<span>${m.code} ${m.noidung}</span><span class="mi-bang">${m.bang||''}</span>`;
+  }
   pushLog(`📋 Mở: ${m.code}`,null);
   _setMatchStarted(false, matchHasScore);
   updateTossBar();
