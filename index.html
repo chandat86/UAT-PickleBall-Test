@@ -502,7 +502,7 @@ select, input { font-family: inherit; }
           </select>
         </div>
       </div>
-      <div>
+      <div id="referee-row">
         <div class="flabel">Trọng tài</div>
         <input class="inp" id="inp-referee" placeholder="Họ tên trọng tài…">
       </div>
@@ -1932,9 +1932,24 @@ function renderMatchGrid() {
     return;
   }
   if (!filterND) {
-    const total = matchList.filter(m => _matchAllowed(m)).length;
+    const allowedMatches = matchList.filter(m => _matchAllowed(m));
+    const total = allowedMatches.length;
     badge.textContent = total;
     if (title) title.textContent = '📋 Chọn trận đấu';
+
+    // Nếu TT có phân quyền sân hoặc vòng → hiển thị luôn không cần chọn nội dung
+    const hasCourtPerm = _userPerm.courts.length > 0 || _userPerm.rounds.length > 0;
+    if (hasCourtPerm && total > 0) {
+      // Hiển thị tất cả trận thuộc quyền TT
+      grid.innerHTML = '';
+      allowedMatches.forEach(m => {
+        const idx = matchList.indexOf(m);
+        _renderMatchCard(grid, m, idx);
+      });
+      return;
+    }
+
+    // Không có phân quyền hoặc không có trận → yêu cầu chọn nội dung
     const hint = total === 0
       ? `<strong style="color:var(--red)">Không có trận nào trong sân được phân quyền.</strong>`
       : `Chọn <strong>Nội dung</strong> để xem danh sách trận (${total} trận)`;
@@ -1967,7 +1982,12 @@ function renderMatchGrid() {
 
   grid.innerHTML = '';
   filtered.forEach(m => {
-    const idx    = matchList.indexOf(m);
+    const idx = matchList.indexOf(m);
+    _renderMatchCard(grid, m, idx);
+  });
+}
+
+function _renderMatchCard(grid, m, idx) {
     const done   = (m.matchScoreA !== null && m.matchScoreA !== undefined);
     const active = S.currentMatch?.key === m.key;
     const isLive = active && matchStarted && !done; // đang chấm điểm chưa lưu
@@ -2046,7 +2066,6 @@ function renderMatchGrid() {
       `</div>`;
     btn.onclick = () => loadMatch(idx);
     grid.appendChild(btn);
-  });
 }
 
 function renderHistory() {
@@ -2249,6 +2268,9 @@ function nextGame() {
   render();
 }
 
+// Set các key LiveScore đã bị xoá — poll sẽ bỏ qua, không restore lại
+const _clearedLiveKeys = new Set();
+
 function resetMatch() {
   if (!confirm('Đặt lại về 0–0?\n\nTrận đấu sẽ về trạng thái "Chưa thi đấu".')) return;
   const prevKey = S.currentMatch?.key;
@@ -2259,20 +2281,30 @@ function resetMatch() {
   const notice = document.getElementById('swap-notice');
   if (notice) { clearTimeout(notice._hideTimer); notice.classList.remove('show'); }
   pushLog('↺ Reset về 0–0', null);
-  if (prevKey && liveScores[prevKey]) delete liveScores[prevKey];
+
+  // Xoá LiveScore local + đánh dấu blacklist
+  if (prevKey) {
+    delete liveScores[prevKey];
+    _clearedLiveKeys.add(prevKey); // ngăn poll restore lại
+  }
   try {
     const ls = JSON.parse(localStorage.getItem('pb_live6')||'{}');
     if (prevKey && ls[prevKey]) { delete ls[prevKey]; localStorage.setItem('pb_live6', JSON.stringify(ls)); }
   } catch(e) {}
+
+  // Xoá LiveScore trên GSheets (async, fire-and-forget)
   if (GS_URL && S.currentMatch) clearLiveGS(S.currentMatch);
+
   _setMatchStarted(false, false);
   render();
-  renderMatchGrid(); // cập nhật card trận về "chưa thi đấu"
+  renderMatchGrid();
 }
 async function clearLiveGS(m) {
   if (!GS_URL || !m) return;
+  const key = (m.noidung||'') + '|' + (m.bang||'') + '|' + (m.code||'');
   try {
-    await syncGS('live', [m.noidung+'|'+m.bang+'|'+m.code, '', 0, 0, '', '', 0, '__CLEAR__']);
+    // Gửi action deleteLive để GAS xoá hẳn row khỏi sheet LiveScore
+    await syncGS('deleteLive', { key });
   } catch(e) {}
 }
 
@@ -2937,7 +2969,9 @@ async function pollMatches() {
       });
       const myKey = S.currentMatch?.key;
       Object.keys(newLive).forEach(k => {
-        if (k !== myKey) liveScores[k] = newLive[k]; // chỉ update máy khác
+        // Bỏ qua key đã bị reset (không restore lại)
+        if (_clearedLiveKeys.has(k)) return;
+        if (k !== myKey) liveScores[k] = newLive[k];
       });
       Object.keys(liveScores).forEach(k => {
         if (k !== myKey && !newLive[k]) delete liveScores[k];
@@ -3452,14 +3486,23 @@ function _applyPerm(data) {
     name:    data.name || data.code || '',
     code:    data.code || '',
   };
+
+  // Auto-fill tên trọng tài + ẩn ô nhập
   const refInput = document.getElementById('inp-referee');
-  if (refInput && data.name && !refInput.value) refInput.value = data.name;
+  const refRow   = document.getElementById('referee-row');
+  if (refInput && data.name) {
+    refInput.value = data.name;
+    if (refRow) refRow.style.display = 'none'; // ẩn — đã tự động
+  }
+
+  // Tự điền sân nếu chỉ có 1 sân được phân
   if (_userPerm.courts.length === 1) {
     const courtInp = document.getElementById('inp-court');
-    if (courtInp && !courtInp.value) courtInp.value = _userPerm.courts[0];
+    if (courtInp) courtInp.value = _userPerm.courts[0];
   }
+
   if (matchList.length) {
-    syncDropdownsFromData(false); // rebuild với filter quyền mới
+    syncDropdownsFromData(false);
   } else {
     renderMatchGrid();
   }
