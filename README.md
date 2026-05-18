@@ -1,5 +1,7 @@
 Link app: https://chandat86.github.io/UAT-PickleBall-Test/
 
+https://script.google.com/macros/s/AKfycbyLujKd3ONX6RZffuMaHSWKgGCGN6k6dAwp3kEEw05Shs6u4jctSpwe6-B7tw8yTCKL/exec
+
 
 \Hướng dẫn đổi URL khi có GAS mới:
 Cách 1 — Vĩnh viễn (khuyến nghị): Mở file HTML, tìm dòng:
