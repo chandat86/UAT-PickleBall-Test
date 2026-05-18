@@ -1,4 +1,7 @@
-Hướng dẫn đổi URL khi có GAS mới:
+Link app: https://chandat86.github.io/UAT-PickleBall-Test/
+
+
+\Hướng dẫn đổi URL khi có GAS mới:
 Cách 1 — Vĩnh viễn (khuyến nghị): Mở file HTML, tìm dòng:
 javascriptconst _EMBEDDED_GS_URL = 'https://script.google.com/macros/s/AKfycb...';
 Thay URL mới vào → lưu file → xong
