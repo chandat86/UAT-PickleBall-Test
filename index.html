@@ -598,18 +598,32 @@
 
 <!-- ════════════════ LOGIN ════════════════ -->
 <div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">Da Nang Pickleball</div>
-    <div class="login-title">Admin Panel</div>
-    <div class="login-sub">Quản trị hệ thống trọng tài</div>
+  <div style="width:440px;max-width:95vw">
+    <div class="login-box" style="margin-bottom:12px">
+      <div class="login-logo">Da Nang Pickleball</div>
+      <div class="login-title">Admin Panel</div>
+      <div class="login-sub">Quản trị hệ thống trọng tài</div>
 
-    <div class="gs-label">🔗 Google Apps Script URL</div>
-    <input type="text" class="gs-input" id="gs-url-input" placeholder="https://script.google.com/macros/s/..." />
+      <div class="gs-label">🔗 Google Apps Script URL</div>
+      <input type="text" class="gs-input" id="gs-url-input" placeholder="https://script.google.com/macros/s/...EXEC" />
 
-    <div class="gs-label" style="margin-top:10px">🔑 Mã Admin</div>
-    <input type="text" id="admin-code-input" placeholder="ADMIN01" maxlength="20" />
-    <button class="btn-login" id="login-btn" onclick="doLogin()">Đăng nhập</button>
-    <div class="login-err" id="login-err"></div>
+      <div class="gs-label" style="margin-top:10px">🔑 Mã Admin</div>
+      <input type="text" id="admin-code-input" placeholder="ADMIN01" maxlength="20" />
+      <button class="btn-login" id="login-btn" onclick="doLogin()">Đăng nhập</button>
+      <div class="login-err" id="login-err"></div>
+      <div id="login-debug" style="display:none;margin-top:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px;text-align:left;font-size:11px;color:var(--orange);font-family:var(--mono);word-break:break-all;line-height:1.6"></div>
+    </div>
+
+    <!-- Hướng dẫn cho trọng tài -->
+    <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:16px 18px;">
+      <div style="font-size:12px;font-weight:800;color:var(--green);margin-bottom:8px;letter-spacing:1px">🏓 TRỌNG TÀI ĐĂNG NHẬP Ở ĐÂU?</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.8">
+        Trọng tài <strong style="color:var(--text)">không dùng trang này</strong>.<br>
+        Trọng tài mở file <strong style="color:var(--accent)">pickleball_referee_final.html</strong><br>
+        và nhập mã trọng tài (REF001, REF002...) để đăng nhập.<br><br>
+        <span style="color:var(--text3);font-size:11px">Trang này chỉ dành cho Admin quản lý giải đấu.</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1131,7 +1145,16 @@ async function doLogin() {
     const res = await fetch(`${url}?action=validate&code=${encodeURIComponent(code)}&device=AdminPanel`);
     const d   = await res.json();
     if (!d.ok || !d.valid) { err.textContent = '❌ ' + (d.reason || 'Sai mã'); return; }
-    if (!d.isAdmin)         { err.textContent = '❌ Tài khoản không có quyền Admin'; return; }
+    if (!d.isAdmin) {
+      err.textContent = '❌ Tài khoản không có quyền Admin';
+      // Hiển thị debug để biết GSheets đang lưu gì
+      const dbg = document.getElementById('login-debug');
+      dbg.style.display = 'block';
+      dbg.innerHTML = `⚠️ Debug: Tài khoản <b>${d.name}</b> (${code}) hợp lệ nhưng KHÔNG phải Admin.<br>
+GSheets đang lưu Trạng thái = <b>"${d.statusRaw||'(trống)'}"</b><br><br>
+👉 Vào Google Sheet → tab <b>Users</b> → cột <b>Trạng thái</b> → đổi ô của ${code} thành chữ <b>admin</b> (viết thường).`;
+      return;
+    }
     GS_URL     = url;
     ADMIN_CODE = code;
     adminName  = d.name;
