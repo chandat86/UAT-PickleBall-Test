@@ -3643,16 +3643,15 @@ function _matchAllowed(m) {
   }
 
   // ── Lọc theo sân ─────────────────────────────────────────────────
-  // Nếu trận chưa được gán sân cụ thể → vẫn hiển thị (không reject)
+  // Trận chưa được gán sân → ẩn khỏi trọng tài
   const matchCourt = (m.court || m.san || '').trim();
-  if (matchCourt) {
-    const courtOk = _userPerm.courts.some(c =>
-      matchCourt.toLowerCase() === c.toLowerCase() ||
-      matchCourt.toLowerCase().includes(c.toLowerCase()) ||
-      c.toLowerCase().includes(matchCourt.toLowerCase())
-    );
-    if (!courtOk) return false;
-  }
+  if (!matchCourt) return false;
+  const courtOk = _userPerm.courts.some(c =>
+    matchCourt.toLowerCase() === c.toLowerCase() ||
+    matchCourt.toLowerCase().includes(c.toLowerCase()) ||
+    c.toLowerCase().includes(matchCourt.toLowerCase())
+  );
+  if (!courtOk) return false;
 
   // ── Lọc theo nội dung (nếu được phân) ───────────────────────────
   if (_userPerm.noidung) {
