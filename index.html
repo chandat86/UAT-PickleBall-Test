@@ -1489,13 +1489,24 @@ async function loadAllFromGS() {
   renderMatchGrid();
   renderResults();
   syncBXHDropdowns();
-  if (resultData?.rows?.length > 1) {
-    _bxhRawRows  = resultData.rows.slice(1);
+  // BXH: dùng từ matchData (Matches sheet) với trận đã có điểm
+  if (matchData?.rows?.length > 1) {
+    const donedRows = matchData.rows.slice(1).filter(r =>
+      r[5] !== '' && r[5] !== null && r[5] !== undefined &&
+      r[6] !== '' && r[6] !== null && r[6] !== undefined
+    );
+    _bxhRawRows = donedRows.map(r => {
+      const sA = Number(r[5])||0, sB = Number(r[6])||0;
+      const winner = sA > sB ? String(r[4]||'') : sB > sA ? String(r[7]||'') : '';
+      return ['', String(r[0]||''), String(r[1]||''), String(r[2]||''), String(r[3]||''),
+              String(r[4]||''), String(r[7]||''), sA, sB, winner];
+    });
     _bxhLoadedAt = Date.now();
-    const now = new Date(_bxhLoadedAt).toLocaleTimeString('vi-VN');
+    const nowStr = new Date(_bxhLoadedAt).toLocaleTimeString('vi-VN');
     const bxhSrc = document.getElementById('bxh-src');
-    if (bxhSrc) bxhSrc.textContent = `📡 Nguồn: Google Sheets KetQua · ${_bxhRawRows.length} kết quả · cập nhật lúc ${now}`;
+    if (bxhSrc) bxhSrc.textContent = `📡 Nguồn: Matches sheet · ${_bxhRawRows.length} trận có kết quả · cập nhật lúc ${nowStr}`;
   }
+  syncBXHDropdowns();
   renderBXH();
   setDot('ok');
 
@@ -3294,8 +3305,11 @@ function syncBXHDropdowns() {
 
   const curND   = ndSel.value;
   const curBang = bangSel.value;
-  const nds   = [...new Set(matchList.map(m => m.noidung).filter(Boolean))];
-  const bangs = [...new Set(matchList.map(m => m.bang).filter(Boolean))];
+
+  // Lọc matchList theo giải + sân của trọng tài (không phải admin)
+  const allowedBXH = _bxhAllowedMatches();
+  const nds   = [...new Set(allowedBXH.map(m => m.noidung).filter(Boolean))];
+  const bangs = [...new Set(allowedBXH.map(m => m.bang).filter(Boolean))];
 
   ndSel.innerHTML = '<option value="">-- Nội dung --</option>';
   nds.forEach(nd => {
@@ -3313,36 +3327,80 @@ function syncBXHDropdowns() {
   if (curND   && nds.includes(curND))     ndSel.value   = curND;
   if (curBang && bangs.includes(curBang)) bangSel.value = curBang;
 }
+
+// Trả về danh sách matches cho phép xem BXH:
+// - Admin: tất cả matches
+// - Trọng tài: chỉ matches thuộc giải mình + sân mình
+function _bxhAllowedMatches() {
+  if (_userPerm.isAdmin) return matchList;
+  return matchList.filter(m => {
+    // Lọc theo giải
+    if (_userPerm.giai && m.giai && m.giai !== _userPerm.giai) return false;
+    // Lọc theo sân
+    if (_userPerm.courts.length > 0) {
+      const mCourt = (m.court || '').trim().toLowerCase();
+      if (!mCourt) return false;
+      const courtOk = _userPerm.courts.some(c => mCourt === c.trim().toLowerCase());
+      if (!courtOk) return false;
+    }
+    return true;
+  });
+}
 async function loadBXHFromGS() {
   const btn  = document.getElementById('bxh-reload-btn');
   const src  = document.getElementById('bxh-src');
   const tbody = document.getElementById('bxh-body');
 
-  if (!GS_URL) {
-    toast('⚠️ Chưa có URL Google Sheets!');
-    return;
-  }
+  if (!GS_URL) { toast('⚠️ Chưa có URL Google Sheets!'); return; }
 
   if (btn) { btn.textContent = '⏳ ĐANG CẬP NHẬT BXH...'; btn.disabled = true; }
   if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="bxh-empty" style="font-weight:700;color:var(--green-dk);font-family:Oswald,sans-serif;font-size:13px;letter-spacing:.3px">⏳ ĐANG CẬP NHẬT BẢNG XẾP HẠNG...</td></tr>';
 
   try {
-    const res  = await fetch(GS_URL + '?action=results', { cache: 'no-store' });
+    // Lấy từ sheet Matches (có cột Điểm A/B) thay vì KetQua
+    const res  = await fetch(GS_URL + '?action=matches', { cache: 'no-store' });
     const data = await res.json();
 
-    if (!data.ok || !data.rows?.length) throw new Error('Không có dữ liệu KetQua');
-    _bxhRawRows  = data.rows.slice(1);
+    if (!data.ok || !data.rows?.length) throw new Error('Không có dữ liệu Matches');
+
+    // Chỉ lấy các trận đã có điểm (Điểm A và Điểm B không rỗng)
+    const rows = data.rows.slice(1).filter(r =>
+      r[5] !== '' && r[5] !== null && r[5] !== undefined &&
+      r[6] !== '' && r[6] !== null && r[6] !== undefined
+    );
+
+    // Chuyển thành định dạng _bxhRawRows tương thích với _parseGSRow
+    // Matches: Giải(0)|ND(1)|Bảng(2)|Mã(3)|ĐA(4)|ĐA(5)|ĐB(6)|ĐB(7)|Sân(8)|Vòng(9)
+    // _parseGSRow mong: savedAt(0)|giai(1)|noidung(2)|bang(3)|code(4)|teamA(5)|teamB(6)|scoreA(7)|scoreB(8)|winner(9)
+    _bxhRawRows = rows.map(r => {
+      const sA = Number(r[5])||0, sB = Number(r[6])||0;
+      const winner = sA > sB ? String(r[4]||'') : sB > sA ? String(r[7]||'') : '';
+      return [
+        '',               // [0] savedAt (không cần)
+        String(r[0]||''), // [1] giai
+        String(r[1]||''), // [2] noidung
+        String(r[2]||''), // [3] bang
+        String(r[3]||''), // [4] code
+        String(r[4]||''), // [5] teamA
+        String(r[7]||''), // [6] teamB
+        sA,               // [7] scoreA
+        sB,               // [8] scoreB
+        winner            // [9] winner
+      ];
+    });
     _bxhLoadedAt = Date.now();
 
-    const now = new Date(_bxhLoadedAt).toLocaleTimeString('vi-VN');
-    if (src) src.textContent = `📡 Nguồn: Google Sheets KetQua · ${_bxhRawRows.length} kết quả · cập nhật lúc ${now}`;
+    const nowStr = new Date(_bxhLoadedAt).toLocaleTimeString('vi-VN');
+    if (src) src.textContent = `📡 Nguồn: Matches sheet · ${_bxhRawRows.length} trận có kết quả · cập nhật lúc ${nowStr}`;
 
+    syncBXHDropdowns();
     renderBXH();
-    toast(`✅ BXH: ${_bxhRawRows.length} kết quả từ GSheets`);
+    toast(`✅ BXH: ${_bxhRawRows.length} trận có điểm từ GSheets`);
   } catch (err) {
     if (src) src.textContent = `⚠️ Không tải được GSheets — dùng dữ liệu local`;
     toast('⚠️ Lỗi tải BXH: ' + err.message);
     _bxhRawRows = null;
+    syncBXHDropdowns();
     renderBXH();
   } finally {
     if (btn) { btn.textContent = '🔄 Cập nhật BXH'; btn.disabled = false; }
@@ -3372,12 +3430,17 @@ function renderBXH() {
   const badge = document.getElementById('bxh-badge');
   const src   = document.getElementById('bxh-src');
   let results;
+  // Lấy danh sách sân + giải được phép xem (theo phân quyền trọng tài)
+  const allowedSet = new Set(_bxhAllowedMatches().map(m => m.key || (m.noidung+'|'+m.bang+'|'+m.code)));
+
   if (_bxhRawRows) {
     const byKey = {};
     _bxhRawRows
-      .filter(r => r[0] && r[4])
+      .filter(r => r[4]) // code phải có
       .forEach(r => {
         const key = `${String(r[2]||'').trim()}|${String(r[3]||'').trim()}|${String(r[4]||'').trim()}`;
+        // Lọc theo giải + sân được phân (admin xem tất cả)
+        if (!_userPerm.isAdmin && allowedSet.size > 0 && !allowedSet.has(key)) return;
         if (!byKey[key] || String(r[0]) > String(byKey[key][0])) {
           byKey[key] = r;
         }
@@ -3391,6 +3454,8 @@ function renderBXH() {
       });
   } else {
     results = Object.values(S.results).filter(r => {
+      const key = (r.noidung||'')+'|'+(r.bang||'')+'|'+(r.code||'');
+      if (!_userPerm.isAdmin && allowedSet.size > 0 && !allowedSet.has(key)) return false;
       if (filterND   && r.noidung !== filterND)   return false;
       if (filterBang && r.bang    !== filterBang) return false;
       return true;
