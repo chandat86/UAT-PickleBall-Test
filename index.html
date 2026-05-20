@@ -770,7 +770,7 @@ select, input { font-family: inherit; }
     
     <div class="bxh-filter">
       <div class="sel-w">
-        <select class="sel" id="bxh-nd" onchange="renderBXH()" style="font-size:12px">
+        <select class="sel" id="bxh-nd" onchange="onBxhNdChange()" style="font-size:12px">
           <option value="">-- Nội dung --</option>
         </select>
       </div>
@@ -3335,24 +3335,47 @@ function syncBXHDropdowns() {
 
   const curND   = ndSel.value;
   const curBang = bangSel.value;
-  const nds   = [...new Set(matchList.map(m => m.noidung).filter(Boolean))];
-  const bangs = [...new Set(matchList.map(m => m.bang).filter(Boolean))];
 
+  // Chỉ lấy ND/Bảng từ matches TT được phép xem
+  const allowed = _bxhAllowedMatches();
+  const nds   = [...new Set(allowed.map(m => m.noidung).filter(Boolean))].sort();
+
+  // Bảng: lọc theo ND đang chọn (nếu có) để cascade
+  const bangsSource = curND ? allowed.filter(m => m.noidung === curND) : allowed;
+  const bangs = [...new Set(bangsSource.map(m => m.bang).filter(Boolean))].sort();
+
+  // Populate ND
   ndSel.innerHTML = '<option value="">-- Nội dung --</option>';
   nds.forEach(nd => {
     const opt = document.createElement('option');
     opt.value = nd; opt.textContent = nd;
+    if (nd === curND) opt.selected = true;
     ndSel.appendChild(opt);
   });
+
+  // Populate Bảng — hiện rõ số trận TT bắt trong bảng đó
   bangSel.innerHTML = '<option value="">-- Bảng --</option>';
   bangs.forEach(b => {
+    const cnt = bangsSource.filter(m => m.bang === b).length;
     const opt = document.createElement('option');
-    opt.value = b; opt.textContent = b;
+    opt.value = b;
+    opt.textContent = cnt > 0 ? `${b}  (${cnt} trận)` : b;
+    if (b === curBang) opt.selected = true;
     bangSel.appendChild(opt);
   });
 
-  if (curND   && nds.includes(curND))     ndSel.value   = curND;
-  if (curBang && bangs.includes(curBang)) bangSel.value = curBang;
+  // Nếu chỉ có 1 ND → auto chọn
+  if (nds.length === 1 && !curND) ndSel.value = nds[0];
+  // Nếu chỉ có 1 Bảng → auto chọn
+  if (bangs.length === 1 && !curBang) bangSel.value = bangs[0];
+}
+
+// Khi đổi ND → cập nhật lại Bảng dropdown
+function onBxhNdChange() {
+  const bangSel = document.getElementById('bxh-bang');
+  if (bangSel) bangSel.value = '';
+  syncBXHDropdowns();
+  renderBXH();
 }
 async function loadBXHFromGS() {
   const btn  = document.getElementById('bxh-reload-btn');
@@ -3462,48 +3485,79 @@ function renderBXH() {
     if (badge) badge.textContent = '0';
     return;
   }
-  const teams = {};
-  const ensureTeam = name => {
-    if (!teams[name]) teams[name] = { name, played:0, wins:0, losses:0, pf:0, pa:0 };
-  };
+  // Helper: tính BXH từ list kết quả
+  function calcBXH(rows) {
+    const t = {};
+    const ensure = n => { if(!t[n]) t[n]={name:n,played:0,wins:0,losses:0,pf:0,pa:0}; };
+    rows.forEach(r => {
+      const tA=r.teamA,tB=r.teamB;
+      if(!tA||!tB) return;
+      ensure(tA); ensure(tB);
+      t[tA].played++; t[tB].played++;
+      t[tA].pf+=r.scoreA; t[tA].pa+=r.scoreB;
+      t[tB].pf+=r.scoreB; t[tB].pa+=r.scoreA;
+      if(r.scoreA>r.scoreB){t[tA].wins++;t[tB].losses++;}
+      else if(r.scoreB>r.scoreA){t[tB].wins++;t[tA].losses++;}
+    });
+    return Object.values(t).sort((a,b)=>{
+      if(b.wins!==a.wins) return b.wins-a.wins;
+      const hA=a.pf-a.pa,hB=b.pf-b.pa;
+      if(hB!==hA) return hB-hA;
+      return b.pf-a.pf;
+    });
+  }
+  function makeRows(sorted) {
+    return sorted.map((t,i)=>{
+      const rank=i+1,hs=t.pf-t.pa;
+      const hsCls=hs>0?'hso-pos':hs<0?'hso-neg':'';
+      const hsStr=hs>0?'+'+hs:String(hs);
+      const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
+      return `<tr class="rank-${rank<=3?rank:''}">
+        <td style="text-align:center">${medal}</td>
+        <td title="${t.name}" style="text-align:left">${t.name}</td>
+        <td style="text-align:center;color:var(--g500)">${t.played}</td>
+        <td style="text-align:center;color:var(--green-dk);font-weight:700">${t.wins}</td>
+        <td style="text-align:center;color:var(--red)">${t.losses}</td>
+        <td style="text-align:center" class="${hsCls}">${hsStr}</td>
+        <td style="text-align:center;font-family:'Oswald',sans-serif;font-size:15px;font-weight:700" class="pts">${t.wins}</td>
+      </tr>`;
+    }).join('');
+  }
 
-  results.forEach(r => {
-    const tA = r.teamA, tB = r.teamB;
-    if (!tA || !tB) return;
-    ensureTeam(tA); ensureTeam(tB);
+  // Nếu chọn Bảng cụ thể → 1 bảng đơn
+  if (filterBang) {
+    const sorted = calcBXH(results);
+    if (badge) badge.textContent = sorted.length;
+    tbody.innerHTML = sorted.length ? makeRows(sorted)
+      : '<tr><td colspan="7" class="bxh-empty">Chưa có kết quả trong bảng này</td></tr>';
+    return;
+  }
 
-    teams[tA].played++; teams[tB].played++;
-    teams[tA].pf += r.scoreA; teams[tA].pa += r.scoreB;
-    teams[tB].pf += r.scoreB; teams[tB].pa += r.scoreA;
+  // Không chọn Bảng → group by bảng, mỗi bảng 1 section
+  const bangSet = [...new Set(results.map(r=>r.bang).filter(Boolean))].sort();
+  if (bangSet.length <= 1) {
+    // Chỉ 1 bảng → render bình thường (không cần header)
+    const sorted = calcBXH(results);
+    if (badge) badge.textContent = sorted.length;
+    tbody.innerHTML = makeRows(sorted);
+    return;
+  }
 
-    if (r.scoreA > r.scoreB)      { teams[tA].wins++; teams[tB].losses++; }
-    else if (r.scoreB > r.scoreA) { teams[tB].wins++; teams[tA].losses++; }
-  });
-  const sorted = Object.values(teams).sort((a, b) => {
-    if (b.wins !== a.wins) return b.wins - a.wins;
-    const hsA = a.pf - a.pa, hsB = b.pf - b.pa;
-    if (hsB !== hsA) return hsB - hsA;
-    return b.pf - a.pf;
-  });
-
-  if (badge) badge.textContent = sorted.length;
-
-  tbody.innerHTML = sorted.map((t, i) => {
-    const rank = i + 1;
-    const hs   = t.pf - t.pa;
-    const hsClass = hs > 0 ? 'hso-pos' : hs < 0 ? 'hso-neg' : '';
-    const hsStr = hs > 0 ? '+' + hs : String(hs);
-    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
-    return `<tr class="rank-${rank <= 3 ? rank : ''}">
-      <td style="text-align:center">${medal}</td>
-      <td title="${t.name}" style="text-align:left">${t.name}</td>
-      <td style="text-align:center;color:var(--g500)">${t.played}</td>
-      <td style="text-align:center;color:var(--green-dk);font-weight:700">${t.wins}</td>
-      <td style="text-align:center;color:var(--red)">${t.losses}</td>
-      <td style="text-align:center" class="${hsClass}">${hsStr}</td>
-      <td style="text-align:center;font-family:'Oswald',sans-serif;font-size:15px;font-weight:700" class="pts">${t.wins}</td>
-    </tr>`;
+  // Nhiều bảng → render có section header mỗi bảng
+  let totalTeams = 0;
+  const sections = bangSet.map(bg => {
+    const bgResults = results.filter(r=>r.bang===bg);
+    const sorted    = calcBXH(bgResults);
+    totalTeams += sorted.length;
+    const hdr = `<tr style="background:rgba(5,150,105,.15)">
+      <td colspan="7" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;
+        letter-spacing:.6px;color:var(--green-dk);padding:5px 10px;text-align:left">
+        ${bg}
+      </td></tr>`;
+    return hdr + makeRows(sorted);
   }).join('');
+  if (badge) badge.textContent = totalTeams;
+  tbody.innerHTML = sections;
 }
 function exportCSV() {
   const arr=Object.values(S.results);
