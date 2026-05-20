@@ -1946,9 +1946,11 @@ function renderMatchGrid() {
       grid.innerHTML = '';
       if (total === 0) {
         const courtLabel = _userPerm.courts.length ? _userPerm.courts.join(', ') : '';
-        grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;color:var(--red)">
-          <strong>Không có trận nào tại sân ${courtLabel}.</strong><br>
-          <span style="color:var(--g500);font-size:12px">Kiểm tra lại lịch đấu đã được tải chưa.</span>
+        const giaiLabel  = _userPerm.giai ? ` · ${_userPerm.giai}` : '';
+        grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;text-align:center;padding:16px">
+          <div style="font-size:28px;margin-bottom:6px">📭</div>
+          <strong style="color:var(--red)">Không có trận nào${giaiLabel ? ' tại ' + giaiLabel : ''} · ${courtLabel}.</strong><br>
+          <span style="color:var(--g500);font-size:12px;margin-top:4px;display:block">Kiểm tra lại lịch đấu đã được tải chưa.</span>
         </div>`;
       } else {
         allowedMatches.forEach(m => {
@@ -1960,10 +1962,10 @@ function renderMatchGrid() {
     }
 
     // Chưa được phân sân → không thấy trận
-    grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;text-align:center;padding:20px 0">
-      <div style="font-size:32px;margin-bottom:8px">🔒</div>
-      <strong style="color:var(--red)">Bạn chưa được phân công sân thi đấu.</strong><br>
-      <span style="color:var(--g500);font-size:12px">Liên hệ Ban tổ chức để được phân sân.</span>
+    grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;text-align:center;padding:24px 16px">
+      <div style="font-size:36px;margin-bottom:10px">🔒</div>
+      <strong style="color:var(--red);font-size:14px">Bạn chưa được phân công sân thi đấu.</strong><br>
+      <span style="color:var(--g500);font-size:12px;margin-top:6px;display:block">Liên hệ Ban tổ chức để được phân sân.</span>
     </div>`;
     return;
   }
@@ -3475,7 +3477,10 @@ function toast(msg, duration) {
 }
 const LIC_KEY      = 'pb_license_v1';
 const LIC_CHECK_MS = 6 * 60 * 60 * 1000; // re-validate mỗi 6 giờ
-let _userPerm = { courts: [], rounds: [], isAdmin: false, name: '', code: '', giai: '', noidung: '' };
+// _userPerm.assignment = { giai, courts[], noidung, rounds[] }
+// giai bắt buộc → tránh trùng tên sân giữa 2 giải cùng lúc
+let _userPerm = { courts: [], rounds: [], isAdmin: false, name: '', code: '', giai: '', noidung: '',
+                  assignment: null };
 
 function _deviceId() {
   let id = localStorage.getItem('pb_device_id');
@@ -3497,14 +3502,22 @@ function licSave(data) {
 function licClear() { localStorage.removeItem(LIC_KEY); }
 
 function _applyPerm(data) {
-  _userPerm = {
-    courts:  Array.isArray(data.courts)  ? data.courts  : [],
-    rounds:  Array.isArray(data.rounds)  ? data.rounds  : [],
-    isAdmin: !!data.isAdmin,
-    name:    data.name || data.code || '',
-    code:    data.code || '',
+  // Ưu tiên dùng assignment mới (có giai đi kèm) để tránh trùng sân giữa các giải
+  const asgn = data.assignment || {
     giai:    data.giai    || '',
+    courts:  Array.isArray(data.courts) ? data.courts : [],
     noidung: data.noidung || '',
+    rounds:  Array.isArray(data.rounds) ? data.rounds : [],
+  };
+  _userPerm = {
+    courts:     asgn.courts,
+    rounds:     asgn.rounds,
+    isAdmin:    !!data.isAdmin,
+    name:       data.name || data.code || '',
+    code:       data.code || '',
+    giai:       asgn.giai,
+    noidung:    asgn.noidung,
+    assignment: asgn,
   };
 
   // Auto-fill tên trọng tài + ẩn ô nhập
@@ -3554,8 +3567,16 @@ function _updatePermBadge() {
     };
     hdr.insertBefore(badge, hdr.firstChild);
   }
-  const courtStr = _userPerm.courts.length ? ` · ${_userPerm.courts.join('/')}` : ' · 🔒 Chưa phân sân';
-  badge.textContent = `👤 ${saved.name}${courtStr}`;
+  let badgeLabel = `👤 ${saved.name}`;
+  if (_userPerm.isAdmin) {
+    badgeLabel += ' · 🔑 Admin';
+  } else if (_userPerm.courts.length) {
+    const giaiShort = _userPerm.giai ? ` [${_userPerm.giai.replace(/giải\s*/i,'').substring(0,12)}]` : '';
+    badgeLabel += `${giaiShort} · ${_userPerm.courts.join('/')}`;
+  } else {
+    badgeLabel += ' · 🔒 Chưa phân sân';
+  }
+  badge.textContent = badgeLabel;
   badge.title = `Mã: ${saved.code} · HH: ${saved.expire}`;
 }
 function _renderCourtPermBadge(allowedCount) {
@@ -3614,7 +3635,14 @@ function _matchAllowed(m) {
   // Trọng tài PHẢI được phân sân mới thấy trận
   if (!_userPerm.courts.length) return false;
 
-  // Lọc theo sân được phân
+  // ── Bắt buộc khớp GIẢI ──────────────────────────────────────────
+  // Tránh trường hợp "Sân 1" của Giải A hiển thị cho TT Giải B
+  if (_userPerm.giai) {
+    const matchGiai = (m.giai || '').trim();
+    if (!matchGiai || matchGiai !== _userPerm.giai) return false;
+  }
+
+  // ── Lọc theo sân ─────────────────────────────────────────────────
   const matchCourt = (m.court || m.san || '').trim();
   if (!matchCourt) return false;
   const courtOk = _userPerm.courts.some(c =>
@@ -3624,7 +3652,13 @@ function _matchAllowed(m) {
   );
   if (!courtOk) return false;
 
-  // Lọc thêm theo vòng đấu nếu có
+  // ── Lọc theo nội dung (nếu được phân) ───────────────────────────
+  if (_userPerm.noidung) {
+    const matchND = (m.noidung || '').trim();
+    if (matchND && matchND !== _userPerm.noidung) return false;
+  }
+
+  // ── Lọc theo vòng đấu (nếu được phân) ───────────────────────────
   if (_userPerm.rounds.length > 0) {
     const matchRound = (m.round || m.vongdau || '').trim();
     if (matchRound) {
