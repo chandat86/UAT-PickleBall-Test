@@ -3303,6 +3303,31 @@ function openCamExternal() {
 let _bxhRawRows = null;   // mảng rows từ KetQua (đã bỏ header)
 let _bxhLoadedAt = 0;     // timestamp lần fetch cuối
 
+// ── _bxhAllowedMatches: trả về matchList được phép xem BXH ──
+// Admin: tất cả · Trọng tài: chỉ giải + sân được phân
+function _bxhAllowedMatches() {
+  if (_userPerm.isAdmin) return matchList;
+  return matchList.filter(m => {
+    // Lọc theo giải (case-insensitive)
+    if (_userPerm.giai) {
+      const mGiai = (m.giai || '').trim().toLowerCase();
+      const pGiai = _userPerm.giai.trim().toLowerCase();
+      if (!mGiai || mGiai !== pGiai) return false;
+    }
+    // Lọc theo sân được phân
+    if (_userPerm.courts.length > 0) {
+      const mCourt = (m.court || m.san || '').trim().toLowerCase();
+      if (!mCourt) return false;
+      const ok = _userPerm.courts.some(c =>
+        mCourt === c.trim().toLowerCase() ||
+        mCourt.includes(c.trim().toLowerCase())
+      );
+      if (!ok) return false;
+    }
+    return true;
+  });
+}
+
 function syncBXHDropdowns() {
   const ndSel   = document.getElementById('bxh-nd');
   const bangSel = document.getElementById('bxh-bang');
