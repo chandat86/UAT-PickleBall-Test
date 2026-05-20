@@ -787,13 +787,13 @@ select, input { font-family: inherit; }
       <table class="bxh-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Đội</th>
-            <th>T</th>
-            <th>Đ</th>
-            <th>B</th>
-            <th>Hiệu số</th>
-            <th>Điểm</th>
+            <th style="text-align:center;width:36px">#</th>
+            <th style="text-align:left">Đội</th>
+            <th style="text-align:center;width:36px" title="Trận đã chấm">T</th>
+            <th style="text-align:center;width:36px" title="Thắng (1đ)">Đ</th>
+            <th style="text-align:center;width:36px" title="Thua (0đ)">B</th>
+            <th style="text-align:center;width:60px" title="Điểm ghi – Điểm thủng">Hiệu số</th>
+            <th style="text-align:center;width:50px" title="Điểm = số trận thắng">Điểm</th>
           </tr>
         </thead>
       </table>
@@ -3388,15 +3388,28 @@ function renderBXH() {
   const badge = document.getElementById('bxh-badge');
   const src   = document.getElementById('bxh-src');
   let results;
+  // Lấy allowed matches để lọc đúng giải + sân của trọng tài
+  const allowedSet = _bxhAllowedMatches();
+  // Set bang|code được phép xem
+  const allowedBC  = new Set(allowedSet.map(m => `${m.bang||''}|${m.code||''}`));
+  // Set giai được phép (nếu có giải phân)
+  const allowedGiai = _userPerm.giai ? _userPerm.giai.trim().toLowerCase() : '';
+
   if (_bxhRawRows) {
     const byKey = {};
     _bxhRawRows
       .filter(r => r[0] && r[4])
       .forEach(r => {
-        const key = `${String(r[2]||'').trim()}|${String(r[3]||'').trim()}|${String(r[4]||'').trim()}`;
-        if (!byKey[key] || String(r[0]) > String(byKey[key][0])) {
-          byKey[key] = r;
-        }
+        // r[1]=giai r[2]=nd r[3]=bang r[4]=code
+        const rGiai = String(r[1]||'').trim().toLowerCase();
+        const rBang = String(r[3]||'').trim();
+        const rCode = String(r[4]||'').trim();
+        // Lọc theo giải: nếu TT có giai phân thì phải khớp
+        if (!_userPerm.isAdmin && allowedGiai && rGiai !== allowedGiai) return;
+        // Lọc theo sân: kiểm tra bang|code có trong allowed không
+        if (!_userPerm.isAdmin && allowedBC.size > 0 && !allowedBC.has(`${rBang}|${rCode}`)) return;
+        const key = `${String(r[2]||'').trim()}|${rBang}|${rCode}`;
+        if (!byKey[key] || String(r[0]) > String(byKey[key][0])) byKey[key] = r;
       });
     results = Object.values(byKey)
       .map(_parseGSRow)
@@ -3407,6 +3420,10 @@ function renderBXH() {
       });
   } else {
     results = Object.values(S.results).filter(r => {
+      // Lọc theo giải
+      if (!_userPerm.isAdmin && allowedGiai && String(r.giai||'').trim().toLowerCase() !== allowedGiai) return false;
+      // Lọc theo bang|code
+      if (!_userPerm.isAdmin && allowedBC.size > 0 && !allowedBC.has(`${r.bang||''}|${r.code||''}`)) return false;
       if (filterND   && r.noidung !== filterND)   return false;
       if (filterBang && r.bang    !== filterBang) return false;
       return true;
@@ -3453,13 +3470,13 @@ function renderBXH() {
     const hsStr = hs > 0 ? '+' + hs : String(hs);
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
     return `<tr class="rank-${rank <= 3 ? rank : ''}">
-      <td>${medal}</td>
-      <td title="${t.name}">${t.name}</td>
-      <td>${t.played}</td>
-      <td style="color:var(--green-dk);font-weight:700">${t.wins}</td>
-      <td style="color:var(--red)">${t.losses}</td>
-      <td class="${hsClass}">${hsStr}</td>
-      <td class="pts">${t.wins}</td>
+      <td style="text-align:center">${medal}</td>
+      <td title="${t.name}" style="text-align:left">${t.name}</td>
+      <td style="text-align:center;color:var(--g500)">${t.played}</td>
+      <td style="text-align:center;color:var(--green-dk);font-weight:700">${t.wins}</td>
+      <td style="text-align:center;color:var(--red)">${t.losses}</td>
+      <td style="text-align:center" class="${hsClass}">${hsStr}</td>
+      <td style="text-align:center;font-family:'Oswald',sans-serif;font-size:15px;font-weight:700" class="pts">${t.wins}</td>
     </tr>`;
   }).join('');
 }
