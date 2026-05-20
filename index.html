@@ -1436,18 +1436,20 @@ async function loadAllFromGS() {
   if (matchData?.rows?.length > 1) {
     const newMatches = [];
     matchData.rows.slice(1).forEach(r => {
-      const nd    = String(r[0]||'').trim();
-      const bang  = String(r[1]||'').trim();
-      const code  = String(r[2]||'').trim();
-      const tA    = String(r[3]||'').trim();
-      const tB    = String(r[6]||'').trim();
-      const sA    = (r[4]!==''&&r[4]!==null&&r[4]!==undefined) ? Number(r[4]) : null;
-      const sB    = (r[5]!==''&&r[5]!==null&&r[5]!==undefined) ? Number(r[5]) : null;
-      const court = String(r[7]||'').trim(); // Sân
-      const round = String(r[8]||'').trim(); // Vòng đấu
+      // GAS v3: Giải đấu(0) | Nội dung(1) | Bảng(2) | Mã trận(3) | Đội A(4) | Điểm A(5) | Điểm B(6) | Đội B(7) | Sân(8) | Vòng đấu(9) | Ghi chú(10)
+      const giai  = String(r[0]||'').trim();
+      const nd    = String(r[1]||'').trim();
+      const bang  = String(r[2]||'').trim();
+      const code  = String(r[3]||'').trim();
+      const tA    = String(r[4]||'').trim();
+      const sA    = (r[5]!==''&&r[5]!==null&&r[5]!==undefined) ? Number(r[5]) : null;
+      const sB    = (r[6]!==''&&r[6]!==null&&r[6]!==undefined) ? Number(r[6]) : null;
+      const tB    = String(r[7]||'').trim();
+      const court = String(r[8]||'').trim(); // Sân
+      const round = String(r[9]||'').trim(); // Vòng đấu
       if (!nd || !code) return;
       const key = `${nd}|${bang}|${code}`;
-      newMatches.push({ noidung:nd, bang, code, teamA:tA, teamB:tB,
+      newMatches.push({ giai, noidung:nd, bang, code, teamA:tA, teamB:tB,
                         matchScoreA:sA, matchScoreB:sB,
                         court, round, // phân quyền
                         key });
@@ -1459,22 +1461,24 @@ async function loadAllFromGS() {
   let addedResults = 0;
   if (!_resultsCleared && resultData?.rows?.length > 1) {
     resultData.rows.slice(1).forEach(r => {
-      if (!r[0] || !r[3]) return;
-      const noidung = String(r[1]||'').trim();
-      const bang    = String(r[2]||'').trim();
-      const code    = String(r[3]||'').trim();
+      if (!r[0] || !r[4]) return;
+      // GAS v3 KetQua: Thời gian(0) | Giải đấu(1) | Nội dung(2) | Bảng(3) | Mã trận(4) | Đội A(5) | Đội B(6) | Điểm A(7) | Điểm B(8) | Thắng(9) | Sân(10) | Trọng tài(11) | Quy tắc(12)
+      const noidung = String(r[2]||'').trim();
+      const bang    = String(r[3]||'').trim();
+      const code    = String(r[4]||'').trim();
       const key = `${noidung}|${bang}|${code}`;
       S.results[key] = {
         savedAt: r[0],
+        giai:    String(r[1]||'').trim(),
         noidung, bang, code,
-        teamA:   String(r[4]||'').trim(),
-        teamB:   String(r[5]||'').trim(),
-        scoreA:  Number(r[6])||0,
-        scoreB:  Number(r[7])||0,
-        winner:  String(r[8]||'').trim(),
-        court:   String(r[9]||'').trim(),
-        referee: String(r[10]||'').trim(),
-        winRule: String(r[11]||'').trim(),
+        teamA:   String(r[5]||'').trim(),
+        teamB:   String(r[6]||'').trim(),
+        scoreA:  Number(r[7])||0,
+        scoreB:  Number(r[8])||0,
+        winner:  String(r[9]||'').trim(),
+        court:   String(r[10]||'').trim(),
+        referee: String(r[11]||'').trim(),
+        winRule: String(r[12]||'').trim(),
       };
       addedResults++;
     });
@@ -2168,6 +2172,7 @@ function addScore(side, delta) {
       const scorerIsOrigA = (side === origSideA);
       syncGS('log', [
         nowMs(), now(),
+        m.giai||'',
         m.noidung||'', m.bang||'', m.code,
         teamAOrig,
         scorerIsOrigA ? '+1' : '',
@@ -2332,6 +2337,7 @@ function logToGS(eventType, note) {
   const referee = document.getElementById('inp-referee').value || '';
   syncGS('log', [
     nowMs(), now(),
+    m.giai||'',
     m.noidung||'', m.bang||'', m.code,
     teamAOrig,
     '',                            // (+1) Đội A — trống
@@ -2408,6 +2414,7 @@ function confirmSave() {
 
   const entry = {
     savedAt: now(), code: m.code, noidung: m.noidung, bang: m.bang,
+    giai: m.giai||'',
     teamA:  origTeamA,   // luôn là đội A gốc từ Matches
     teamB:  origTeamB,   // luôn là đội B gốc từ Matches
     scoreA: scoreOrig_A, // điểm đội A gốc
@@ -2436,6 +2443,7 @@ function confirmSave() {
     const teamBOrig2 = m2.origTeamB || m2.teamB;
     syncGS('log', [
       nowMs(), now(),
+      m2.giai||'',
       m2.noidung||'', m2.bang||'', m2.code,
       teamAOrig2,
       '',                                          // (+1) Đội A — trống
@@ -2457,7 +2465,7 @@ function confirmSave() {
   updateTossBar();
   if (GS_URL) {
     syncGS('append', [
-      entry.savedAt, entry.noidung, entry.bang, entry.code,
+      entry.savedAt, entry.giai||m2.giai||'', entry.noidung, entry.bang, entry.code,
       entry.teamA,   entry.teamB, entry.scoreA, entry.scoreB,
       entry.winner,  entry.court||'', entry.referee||'', entry.winRule,
     ]);
@@ -2989,14 +2997,15 @@ async function pollMatches() {
     const newCount = data.rows.length - 1;
     const newMatches = [];
     data.rows.slice(1).forEach(r => {
-      const nd=String(r[0]||'').trim(), bang=String(r[1]||'').trim(), code=String(r[2]||'').trim();
-      const tA=String(r[3]||'').trim(), tB=String(r[6]||'').trim();
-      const sA=(r[4]!==''&&r[4]!=null) ? Number(r[4]) : null;
-      const sB=(r[5]!==''&&r[5]!=null) ? Number(r[5]) : null;
-      const court=String(r[7]||'').trim();
-      const round=String(r[8]||'').trim();
+      // GAS v3: Giải đấu(0) | Nội dung(1) | Bảng(2) | Mã trận(3) | Đội A(4) | Điểm A(5) | Điểm B(6) | Đội B(7) | Sân(8) | Vòng đấu(9)
+      const giai=String(r[0]||'').trim(), nd=String(r[1]||'').trim(), bang=String(r[2]||'').trim(), code=String(r[3]||'').trim();
+      const tA=String(r[4]||'').trim(), tB=String(r[7]||'').trim();
+      const sA=(r[5]!==''&&r[5]!=null) ? Number(r[5]) : null;
+      const sB=(r[6]!==''&&r[6]!=null) ? Number(r[6]) : null;
+      const court=String(r[8]||'').trim();
+      const round=String(r[9]||'').trim();
       if (!nd||!code) return;
-      newMatches.push({noidung:nd,bang,code,teamA:tA,teamB:tB,matchScoreA:sA,matchScoreB:sB,court,round,key:`${nd}|${bang}|${code}`});
+      newMatches.push({giai,noidung:nd,bang,code,teamA:tA,teamB:tB,matchScoreA:sA,matchScoreB:sB,court,round,key:`${nd}|${bang}|${code}`});
     });
     const oldBangs  = [...new Set(matchList.map(m=>m.bang).filter(Boolean))].join(',');
     const newBangs  = [...new Set(newMatches.map(m=>m.bang).filter(Boolean))].join(',');
@@ -3331,16 +3340,18 @@ async function loadBXHFromGS() {
   }
 }
 function _parseGSRow(r) {
+  // GAS v3 KetQua: Thời gian(0) | Giải đấu(1) | Nội dung(2) | Bảng(3) | Mã trận(4) | Đội A(5) | Đội B(6) | Điểm A(7) | Điểm B(8) | Thắng(9)
   return {
     savedAt: String(r[0]||'').trim(),
-    noidung: String(r[1]||'').trim(),
-    bang:    String(r[2]||'').trim(),
-    code:    String(r[3]||'').trim(),
-    teamA:   String(r[4]||'').trim(),
-    teamB:   String(r[5]||'').trim(),
-    scoreA:  Number(r[6])||0,
-    scoreB:  Number(r[7])||0,
-    winner:  String(r[8]||'').trim(),
+    giai:    String(r[1]||'').trim(),
+    noidung: String(r[2]||'').trim(),
+    bang:    String(r[3]||'').trim(),
+    code:    String(r[4]||'').trim(),
+    teamA:   String(r[5]||'').trim(),
+    teamB:   String(r[6]||'').trim(),
+    scoreA:  Number(r[7])||0,
+    scoreB:  Number(r[8])||0,
+    winner:  String(r[9]||'').trim(),
   };
 }
 
@@ -3355,9 +3366,9 @@ function renderBXH() {
   if (_bxhRawRows) {
     const byKey = {};
     _bxhRawRows
-      .filter(r => r[0] && r[3])
+      .filter(r => r[0] && r[4])
       .forEach(r => {
-        const key = `${String(r[1]||'').trim()}|${String(r[2]||'').trim()}|${String(r[3]||'').trim()}`;
+        const key = `${String(r[2]||'').trim()}|${String(r[3]||'').trim()}|${String(r[4]||'').trim()}`;
         if (!byKey[key] || String(r[0]) > String(byKey[key][0])) {
           byKey[key] = r;
         }
