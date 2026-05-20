@@ -3643,14 +3643,16 @@ function _matchAllowed(m) {
   }
 
   // ── Lọc theo sân ─────────────────────────────────────────────────
+  // Nếu trận chưa được gán sân cụ thể → vẫn hiển thị (không reject)
   const matchCourt = (m.court || m.san || '').trim();
-  if (!matchCourt) return false;
-  const courtOk = _userPerm.courts.some(c =>
-    matchCourt.toLowerCase() === c.toLowerCase() ||
-    matchCourt.toLowerCase().includes(c.toLowerCase()) ||
-    c.toLowerCase().includes(matchCourt.toLowerCase())
-  );
-  if (!courtOk) return false;
+  if (matchCourt) {
+    const courtOk = _userPerm.courts.some(c =>
+      matchCourt.toLowerCase() === c.toLowerCase() ||
+      matchCourt.toLowerCase().includes(c.toLowerCase()) ||
+      c.toLowerCase().includes(matchCourt.toLowerCase())
+    );
+    if (!courtOk) return false;
+  }
 
   // ── Lọc theo nội dung (nếu được phân) ───────────────────────────
   if (_userPerm.noidung) {
@@ -3693,7 +3695,9 @@ async function licValidate() {
 
     if (data.ok && data.valid) {
       licSave({ code, name: data.name, expire: data.expire,
-                courts: data.courts, rounds: data.rounds, isAdmin: data.isAdmin });
+                courts: data.courts, rounds: data.rounds, isAdmin: data.isAdmin,
+                assignment: data.assignment || null,
+                giai: data.giai || '', noidung: data.noidung || '' });
       _applyPerm(data);
 
       const courtInfo = data.courts?.length ? `Sân: ${data.courts.join(', ')}` : 'Tất cả sân';
@@ -3770,7 +3774,9 @@ async function licCheckOnStart() {
         const data = await res.json();
         if (data.ok && data.valid) {
           licSave({ code: saved.code, name: data.name, expire: data.expire,
-                    courts: data.courts, rounds: data.rounds, isAdmin: data.isAdmin });
+                    courts: data.courts, rounds: data.rounds, isAdmin: data.isAdmin,
+                    assignment: data.assignment || null,
+                    giai: data.giai || '', noidung: data.noidung || '' });
           _applyPerm(data);
           licEnter();
           return;
