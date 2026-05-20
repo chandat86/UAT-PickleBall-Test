@@ -1941,23 +1941,30 @@ function renderMatchGrid() {
     badge.textContent = total;
     if (title) title.textContent = '📋 Chọn trận đấu';
 
-    // Nếu TT có phân quyền sân hoặc vòng → hiển thị luôn không cần chọn nội dung
-    const hasCourtPerm = _userPerm.courts.length > 0 || _userPerm.rounds.length > 0;
-    if (hasCourtPerm && total > 0) {
-      // Hiển thị tất cả trận thuộc quyền TT
+    // Trọng tài được phân sân → hiển thị luôn danh sách trận, không cần chọn nội dung
+    if (_userPerm.isAdmin || _userPerm.courts.length > 0) {
       grid.innerHTML = '';
-      allowedMatches.forEach(m => {
-        const idx = matchList.indexOf(m);
-        _renderMatchCard(grid, m, idx);
-      });
+      if (total === 0) {
+        const courtLabel = _userPerm.courts.length ? _userPerm.courts.join(', ') : '';
+        grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;color:var(--red)">
+          <strong>Không có trận nào tại sân ${courtLabel}.</strong><br>
+          <span style="color:var(--g500);font-size:12px">Kiểm tra lại lịch đấu đã được tải chưa.</span>
+        </div>`;
+      } else {
+        allowedMatches.forEach(m => {
+          const idx = matchList.indexOf(m);
+          _renderMatchCard(grid, m, idx);
+        });
+      }
       return;
     }
 
-    // Không có phân quyền hoặc không có trận → yêu cầu chọn nội dung
-    const hint = total === 0
-      ? `<strong style="color:var(--red)">Không có trận nào trong sân được phân quyền.</strong>`
-      : `Chọn <strong>Nội dung</strong> để xem danh sách trận (${total} trận)`;
-    grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;color:var(--g500)">${hint}</div>`;
+    // Chưa được phân sân → không thấy trận
+    grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;text-align:center;padding:20px 0">
+      <div style="font-size:32px;margin-bottom:8px">🔒</div>
+      <strong style="color:var(--red)">Bạn chưa được phân công sân thi đấu.</strong><br>
+      <span style="color:var(--g500);font-size:12px">Liên hệ Ban tổ chức để được phân sân.</span>
+    </div>`;
     return;
   }
   const filtered = matchList.filter(m => {
@@ -3468,7 +3475,7 @@ function toast(msg, duration) {
 }
 const LIC_KEY      = 'pb_license_v1';
 const LIC_CHECK_MS = 6 * 60 * 60 * 1000; // re-validate mỗi 6 giờ
-let _userPerm = { courts: [], rounds: [], isAdmin: false, name: '', code: '' };
+let _userPerm = { courts: [], rounds: [], isAdmin: false, name: '', code: '', giai: '', noidung: '' };
 
 function _deviceId() {
   let id = localStorage.getItem('pb_device_id');
@@ -3496,6 +3503,8 @@ function _applyPerm(data) {
     isAdmin: !!data.isAdmin,
     name:    data.name || data.code || '',
     code:    data.code || '',
+    giai:    data.giai    || '',
+    noidung: data.noidung || '',
   };
 
   // Auto-fill tên trọng tài + ẩn ô nhập
@@ -3535,15 +3544,17 @@ function _updatePermBadge() {
         `👤 ${saved.name}`,
         `Mã: ${saved.code}`,
         `Hết hạn: ${saved.expire}`,
-        `Sân: ${_userPerm.courts.length ? _userPerm.courts.join(', ') : 'Tất cả'}`,
+        `Sân: ${_userPerm.courts.length ? _userPerm.courts.join(', ') : '⚠️ Chưa phân sân'}`,
         `Vòng: ${_userPerm.rounds.length ? _userPerm.rounds.join(', ') : 'Tất cả'}`,
+        _userPerm.giai    ? `Giải: ${_userPerm.giai}`       : '',
+        _userPerm.noidung ? `Nội dung: ${_userPerm.noidung}` : '',
         _userPerm.isAdmin ? '🔑 Quyền Admin' : '',
       ].filter(Boolean).join('\n');
       if (confirm(info + '\n\nĐăng xuất?')) { licClear(); location.reload(); }
     };
     hdr.insertBefore(badge, hdr.firstChild);
   }
-  const courtStr = _userPerm.courts.length ? ` · ${_userPerm.courts.join('/')}` : '';
+  const courtStr = _userPerm.courts.length ? ` · ${_userPerm.courts.join('/')}` : ' · 🔒 Chưa phân sân';
   badge.textContent = `👤 ${saved.name}${courtStr}`;
   badge.title = `Mã: ${saved.code} · HH: ${saved.expire}`;
 }
@@ -3599,26 +3610,31 @@ function _updateTimerBtnLabels() {
 }
 function _matchAllowed(m) {
   if (_userPerm.isAdmin) return true;
-  if (!_userPerm.courts.length && !_userPerm.rounds.length) return true;
-  if (_userPerm.courts.length > 0) {
-    const matchCourt = (m.court || m.san || '').trim();
-    if (!matchCourt) return false;
-    const ok = _userPerm.courts.some(c =>
-      matchCourt.toLowerCase() === c.toLowerCase() ||
-      matchCourt.toLowerCase().includes(c.toLowerCase()) ||
-      c.toLowerCase().includes(matchCourt.toLowerCase())
-    );
-    if (!ok) return false;
-  }
+
+  // Trọng tài PHẢI được phân sân mới thấy trận
+  if (!_userPerm.courts.length) return false;
+
+  // Lọc theo sân được phân
+  const matchCourt = (m.court || m.san || '').trim();
+  if (!matchCourt) return false;
+  const courtOk = _userPerm.courts.some(c =>
+    matchCourt.toLowerCase() === c.toLowerCase() ||
+    matchCourt.toLowerCase().includes(c.toLowerCase()) ||
+    c.toLowerCase().includes(matchCourt.toLowerCase())
+  );
+  if (!courtOk) return false;
+
+  // Lọc thêm theo vòng đấu nếu có
   if (_userPerm.rounds.length > 0) {
     const matchRound = (m.round || m.vongdau || '').trim();
-    if (!matchRound) return true;
-    const ok = _userPerm.rounds.some(r =>
-      matchRound.toLowerCase() === r.toLowerCase() ||
-      matchRound.toLowerCase().includes(r.toLowerCase()) ||
-      r.toLowerCase().includes(matchRound.toLowerCase())
-    );
-    if (!ok) return false;
+    if (matchRound) {
+      const roundOk = _userPerm.rounds.some(r =>
+        matchRound.toLowerCase() === r.toLowerCase() ||
+        matchRound.toLowerCase().includes(r.toLowerCase()) ||
+        r.toLowerCase().includes(matchRound.toLowerCase())
+      );
+      if (!roundOk) return false;
+    }
   }
 
   return true;
