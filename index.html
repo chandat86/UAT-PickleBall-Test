@@ -1387,41 +1387,88 @@ let _syncQueue = [], _syncBusy = false;
 // Thay vì N request riêng lẻ → 1 request batchLog duy nhất
 const _LOG_FLUSH_MS  = 1500; // flush sau 1.5s không có event mới
 const _LOG_FLUSH_MAX = 8;    // flush ngay khi đủ 8 rows
-let _logBuffer  = [];        // hàng đợi rows chưa flush
-let _logTimer   = null;      // debounce timer
+let _logBuffer    = [];      // hàng đợi rows chưa flush
+let _logTimer     = null;    // debounce timer
+let _gasHasBatch  = null;    // null=chưa biết, true=GAS v11+, false=GAS cũ
 
 function logToEventBuffer(row) {
   if (!GS_URL) return;
   _logBuffer.push(row);
   clearTimeout(_logTimer);
   if (_logBuffer.length >= _LOG_FLUSH_MAX) {
-    _flushEventLog(); // đủ rows → flush ngay, không debounce
+    _flushEventLog();
   } else {
     _logTimer = setTimeout(_flushEventLog, _LOG_FLUSH_MS);
   }
 }
 
-function _flushEventLog() {
+async function _flushEventLog() {
   if (!GS_URL || _logBuffer.length === 0) return;
   clearTimeout(_logTimer);
-  const rows = _logBuffer.splice(0); // lấy hết, reset buffer
+  const rows = _logBuffer.splice(0); // lấy hết buffer, reset
+
+  // Nếu biết GAS cũ (không có batchLog) → dùng log đơn lẻ ngay
+  if (_gasHasBatch === false) {
+    _sendLogsFallback(rows);
+    return;
+  }
+
+  // Thử batchLog trước
   const body = JSON.stringify({ action: 'batchLog', rows });
-  // fire-and-forget với keepalive — không block UI, không queue
-  fetch(GS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body,
-    redirect: 'follow',
-    keepalive: true,
-  }).catch(e => {
-    // Khi lỗi → đẩy rows trở lại đầu buffer để flush lần sau
+  try {
+    const res = await fetch(GS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body,
+      redirect: 'follow',
+      keepalive: true,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (json.ok && json.logged > 0) {
+      // batchLog thành công
+      _gasHasBatch = true;
+      return;
+    }
+    // GAS trả về nhưng logged=0 hoặc ok:false → GAS chưa có batchLog handler
+    _gasHasBatch = false;
+    _sendLogsFallback(rows);
+  } catch(e) {
+    // Lỗi mạng → trả rows về buffer, thử lại sau
     _logBuffer.unshift(...rows);
     console.warn('[EventLog] flush failed, buffered:', _logBuffer.length, e.message);
+    // Retry sau 3s
+    setTimeout(_flushEventLog, 3000);
+  }
+}
+
+// Fallback: gửi từng row bằng action 'log' cũ (tương thích GAS v10 trở về trước)
+function _sendLogsFallback(rows) {
+  rows.forEach(row => {
+    const body = JSON.stringify({ action: 'log', row });
+    fetch(GS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body,
+      redirect: 'follow',
+      keepalive: true,
+    }).catch(e => console.warn('[EventLog fallback]', e.message));
   });
 }
 
 // Flush ngay khi thoát trang (beforeunload)
-window.addEventListener('beforeunload', () => { if (_logBuffer.length) _flushEventLog(); });
+window.addEventListener('beforeunload', () => {
+  if (_logBuffer.length) {
+    clearTimeout(_logTimer);
+    const rows = _logBuffer.splice(0);
+    // beforeunload phải dùng sendBeacon hoặc fetch keepalive sync
+    const body = JSON.stringify({ action: 'batchLog', rows });
+    try {
+      navigator.sendBeacon
+        ? navigator.sendBeacon(GS_URL, body)  // sendBeacon đáng tin hơn trong beforeunload
+        : fetch(GS_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body, keepalive:true, redirect:'follow' });
+    } catch(e) {}
+  }
+});
 
 async function syncGS(action, payload, _retryCount, giai) {
   if (!GS_URL) return;
