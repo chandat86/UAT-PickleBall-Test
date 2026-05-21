@@ -2355,7 +2355,12 @@ let matchStarted = false; // trọng tài phải bấm Bắt đầu mới nhập
 
 function startMatch() {
   if (!S.currentMatch) { toast('⚠️ Chưa chọn trận!'); return; }
-  const isResume = matchStarted === false && (S.a > 0 || S.b > 0);
+  // Nếu đã đang chấm (matchStarted=true) → chỉ confirm, không làm gì thêm
+  if (matchStarted) {
+    toast(`🟢 Đang chấm: ${S.currentMatch.code} · ${S.a}–${S.b} · Game ${S.game}`);
+    return;
+  }
+  const isResume = (S.a > 0 || S.b > 0 || S.game > 1);
   matchStarted = true;
   const btn = document.getElementById('btn-start');
   if (btn) { btn.textContent = '🟢 Đang thi đấu'; btn.classList.add('started'); }
@@ -2632,16 +2637,29 @@ function confirmSave() {
 function loadMatch(idx) {
   const m = matchList[idx];
 
-  // ── Nếu đang bấm vào CÙNG TRẬN đang chấm (matchStarted) → GIỮ NGUYÊN tỉ số ──
+  // ── Nếu bấm vào CÙNG TRẬN đang có dữ liệu (chấm hoặc tạm dừng) → GIỮ NGUYÊN ──
   const isSameMatch = S.currentMatch && S.currentMatch.key === m.key;
-  if (isSameMatch && matchStarted) {
-    // Chỉ cập nhật thông tin metadata, KHÔNG reset điểm/server/game
+  const hasActiveScore = S.a > 0 || S.b > 0 || S.game > 1 || S.history.length > 0;
+  if (isSameMatch && (matchStarted || hasActiveScore)) {
+    // Chỉ cập nhật metadata, KHÔNG reset điểm/server/game/history
     S.currentMatch = { ...S.currentMatch, ...m,
       origTeamA: S.currentMatch.origTeamA || m.teamA,
       origTeamB: S.currentMatch.origTeamB || m.teamB,
       origSideA: S.currentMatch.origSideA || 'a',
     };
-    toast(`▶ Tiếp tục: ${m.code} · ${S.a}–${S.b}`);
+    if (matchStarted) {
+      toast(`▶ Đang chấm: ${m.code} · ${S.a}–${S.b} · Game ${S.game}`);
+    } else {
+      // Tự động resume luôn thay vì đợi bấm nút
+      matchStarted = true;
+      document.querySelector('.scoreboard')?.classList.remove('not-started');
+      const startBtn = document.getElementById('btn-start');
+      if (startBtn) { startBtn.textContent = '🟢 Đang thi đấu'; startBtn.classList.add('started'); }
+      const bar = document.getElementById('toss-bar');
+      if (bar) bar.style.display = 'none';
+      toast(`▶ Tiếp tục: ${m.code} · ${S.a}–${S.b} · Game ${S.game}`);
+      saveActiveMatch();
+    }
     renderMatchGrid();
     render();
     return;
@@ -4003,19 +4021,34 @@ function licEnter() {
   // ── Khôi phục trận đang chấm ngay lập tức (không cần chờ GSheets) ──
   const _restored = restoreActiveMatch();
   if (_restored && S.currentMatch) {
-    // Hiển thị scoreboard ngay với dữ liệu từ snapshot
-    _setMatchStarted(matchStarted, false);
-    // Nếu có tỉ số đang dở → đổi nhãn nút thành "▶ Tiếp tục"
-    if (!matchStarted && (S.a > 0 || S.b > 0)) {
-      const btn = document.getElementById('btn-start');
-      if (btn) btn.textContent = '▶ Tiếp tục';
+    const m = S.currentMatch;
+
+    if (matchStarted) {
+      // Trận đang chấm → kích hoạt scoreboard ngay, không cần bấm nút
+      document.querySelector('.scoreboard')?.classList.remove('not-started');
+      const startBtn = document.getElementById('btn-start');
+      if (startBtn) {
+        startBtn.textContent = '🟢 Đang thi đấu';
+        startBtn.classList.add('started');
+        startBtn.classList.remove('done-btn');
+      }
+      // Ẩn toss-bar
+      const bar = document.getElementById('toss-bar');
+      if (bar) bar.style.display = 'none';
+    } else if (S.a > 0 || S.b > 0 || S.game > 1) {
+      // Có tỉ số dở → "▶ Tiếp tục", scoreboard inactive cho đến khi bấm
+      _setMatchStarted(false, false);
+      const startBtn = document.getElementById('btn-start');
+      if (startBtn) startBtn.textContent = '▶ Tiếp tục';
+    } else {
+      _setMatchStarted(false, false);
     }
+
     updateTossBar();
     render();
     renderMatchGrid();
-    const m = S.currentMatch;
-    const scoreStr = `${S.a}–${S.b}`;
-    toast(`⚡ Khôi phục: ${m.code} · ${scoreStr} · Game ${S.game}`, 3500);
+    const scoreStr = `${S.a}–${S.b} · Game ${S.game}`;
+    toast(`⚡ Khôi phục: ${m.code} · ${scoreStr}`, 3000);
   }
 
   if (GS_URL) {
@@ -4031,11 +4064,20 @@ function licEnter() {
     setTimeout(async () => {
       await loadAllFromGS();
       startAutoPoll();
-      // Sau khi load xong, nếu đang restore → re-render để cập nhật grid
+      // Sau khi load xong, nếu đang restore → sync liveScores vào S
       if (_restored && S.currentMatch) {
+        const lv = liveScores[S.currentMatch.key];
+        if (lv && typeof lv.scoreA === 'number' && typeof lv.scoreB === 'number') {
+          // Live score từ GSheets mới hơn → dùng làm nguồn tin cậy hơn snapshot
+          if (lv.scoreA !== S.a || lv.scoreB !== S.b) {
+            S.a = lv.scoreA; S.b = lv.scoreB;
+            render();
+            toast(`🔄 Đồng bộ: ${S.currentMatch.code} · ${S.a}–${S.b}`, 2000);
+          }
+        }
         renderMatchGrid();
       }
-    }, _restored ? 1000 : 400); // Nếu restore rồi thì load chậm hơn 1 chút
+    }, _restored ? 800 : 400);
   }
 }
 
