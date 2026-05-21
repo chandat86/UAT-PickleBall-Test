@@ -2152,8 +2152,9 @@ function renderMatchGrid() {
 
 function _renderMatchCard(grid, m, idx) {
     // "done" = matchList đã có điểm, HOẶC S.results local đã lưu, HOẶC vừa lưu xong (savedMatchKeys)
+    const localResult = S.results[m.key]; // kết quả đã lưu trên máy này
     const done   = (m.matchScoreA !== null && m.matchScoreA !== undefined)
-                || !!S.results[m.key]
+                || !!localResult
                 || _savedMatchKeys.has(m.key);
     const active = S.currentMatch?.key === m.key;
     const isLive = active && matchStarted && !done; // đang chấm điểm chưa lưu
@@ -2178,16 +2179,24 @@ function _renderMatchCard(grid, m, idx) {
     let scA, scB, winA, winB, scStyleA, scStyleB, hasSc, isLiveScore = false;
 
     if (hasLocalLive) {
+      // Máy này đang chấm — dùng điểm live hiện tại
       const origSideA = S.currentMatch?.origSideA || 'a';
       scA = origSideA === 'a' ? S.a : S.b;
       scB = origSideA === 'a' ? S.b : S.a;
       hasSc = true; isLiveScore = true;
     } else if (hasLive) {
+      // Máy khác đang chấm
       scA = liveEntry.scoreA; scB = liveEntry.scoreB;
       hasSc = true; isLiveScore = true;
     } else if (m.matchScoreA !== null && m.matchScoreA !== undefined &&
                m.matchScoreB !== null && m.matchScoreB !== undefined) {
+      // Điểm chính thức từ matchList (đã sync GAS)
       scA = m.matchScoreA; scB = m.matchScoreB;
+      hasSc = true; isLiveScore = false;
+    } else if (localResult && localResult.scoreA !== undefined && localResult.scoreB !== undefined) {
+      // Vừa lưu xong trên máy này — matchList chưa kịp cập nhật từ GAS
+      // Dùng S.results làm nguồn tỉ số ngay lập tức
+      scA = localResult.scoreA; scB = localResult.scoreB;
       hasSc = true; isLiveScore = false;
     } else {
       hasSc = false;
@@ -2621,61 +2630,49 @@ function confirmSave() {
   S.results[m.key] = entry;
   _resultsCleared = false;
   try { localStorage.setItem('pb_res6', JSON.stringify(S.results)); } catch(e) {}
+
+  // Cập nhật matchList local ngay — không đợi polling GAS
   const matchIdx = matchList.findIndex(x => x.key === m.key);
   if (matchIdx !== -1) {
     matchList[matchIdx].matchScoreA = scoreOrig_A;
     matchList[matchIdx].matchScoreB = scoreOrig_B;
     saveMatchList();
   }
+
+  // ── Ngăn polling restore lại trạng thái live — TRƯỚC mọi render ──
+  if (m.key) {
+    delete liveScores[m.key];
+    _clearedLiveKeys.add(m.key); // polling sẽ bỏ qua key này
+    _savedMatchKeys.add(m.key);  // force "done" ngay cả khi matchList chưa có điểm
+  }
+  _setMatchStarted(false, true);
+  clearActiveMatch();
+  updateTossBar();
+
+  // Render 1 lần duy nhất sau khi tất cả state đã sẵn sàng
   renderResults();
   renderMatchGrid();
   renderBXH();
   pushLog(`✅ LƯU: ${m.code} → ${scoreOrig_A}–${scoreOrig_B} (${sn(winner)} thắng)`, null);
-  if (GS_URL && S.currentMatch) {
-    const m2 = S.currentMatch;
-    const origSideA2 = m2.origSideA || 'a';
-    const teamAOrig2 = m2.origTeamA || m2.teamA;
-    const teamBOrig2 = m2.origTeamB || m2.teamB;
+
+  const winnerLabel = scoreOrig_A !== scoreOrig_B ? `🏆 ${sn(winner)} thắng` : '🤝 Hoà';
+  toast(`💾 Đã lưu: ${m.code} · ${scoreOrig_A}–${scoreOrig_B} · ${winnerLabel}`, 4000);
+
+  if (GS_URL) {
+    const m2 = m; // dùng m trực tiếp (S.currentMatch đã bị clear bởi clearActiveMatch)
     syncGS('log', [
       nowMs(), now(),
       m2.giai||'',
       m2.noidung||'', m2.bang||'', m2.code,
-      teamAOrig2,
-      '',                                          // (+1) Đội A — trống
-      `${scoreOrig_A}–${scoreOrig_B}`,             // Tỉ số cuối
-      '',                                          // (+1) Đội B — trống
-      teamBOrig2,
-      'Game '+S.game,
-      RULES[winRule].label,
-      document.getElementById('inp-court').value||'', // Sân
-      '✅ Kết quả',                               // Sự kiện
-      `${sn(winner)}`,                             // Đội thắng
-      document.getElementById('inp-referee').value||'' // Trọng tài
+      origTeamA, '', `${scoreOrig_A}–${scoreOrig_B}`, '', origTeamB,
+      'Game '+S.game, RULES[winRule].label,
+      court, '✅ Kết quả', `${sn(winner)}`, ref
     ]);
-  }
-  const winnerLabel = scoreOrig_A !== scoreOrig_B ? `🏆 ${sn(winner)} thắng` : '🤝 Hoà';
-  toast(`💾 Đã lưu: ${m.code} · ${scoreOrig_A}–${scoreOrig_B} · ${winnerLabel}`, 4000);
-  _setMatchStarted(false, true);
-  clearActiveMatch(); // Xóa snapshot vì trận đã lưu xong
-
-  // ── Ngăn polling restore lại trạng thái live/đang thi đấu ──
-  // Phải làm TRƯỚC khi render để card hiện "Hoàn thành" ngay lập tức
-  if (m.key) {
-    delete liveScores[m.key];
-    _clearedLiveKeys.add(m.key);  // polling sẽ bỏ qua key này hoàn toàn
-    _savedMatchKeys.add(m.key);   // renderMatchCard dùng để force "done"
-  }
-  updateTossBar();
-  renderMatchGrid(); // render ngay với trạng thái done chính xác
-
-  if (GS_URL) {
-    // Đánh dấu LiveScore = finished (KHÔNG xóa) để Admin vẫn thấy tỉ số cuối
-    const m3 = S.currentMatch || m;
-    finishLiveGS(m3, scoreOrig_A, scoreOrig_B);
+    finishLiveGS(m2, scoreOrig_A, scoreOrig_B);
     syncGS('append', [
-      entry.savedAt, entry.giai||m2.giai||'', entry.noidung, entry.bang, entry.code,
-      entry.teamA,   entry.teamB, entry.scoreA, entry.scoreB,
-      entry.winner,  entry.court||'', entry.referee||'', entry.winRule,
+      entry.savedAt, entry.giai||'', entry.noidung, entry.bang, entry.code,
+      entry.teamA, entry.teamB, entry.scoreA, entry.scoreB,
+      entry.winner, entry.court||'', entry.referee||'', entry.winRule,
     ]);
   }
 }
