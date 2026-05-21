@@ -1463,16 +1463,31 @@ async function loadAllFromGS() {
   else toast('🔄 Đang làm mới…');
   setDot('syn');
 
-  // Dùng BATCH endpoint: 1 request duy nhất thay vì 2 request song song
+  // Thử BATCH (GAS v8+). Fallback về 2 requests song song nếu GAS cũ
   const actions = _resultsCleared ? 'matches' : 'matches,results';
-  const batchData = await getFromGS(`?action=batch&actions=${actions}`).catch(e => {
-    console.error('[loadAllFromGS]', e);
-    setDot('err'); toast('⚠️ Lỗi kết nối GSheets'); return null;
-  });
+  let matchData = null, resultData = null;
 
-  const matchData  = batchData?.matches  || null;
-  const resultData = _resultsCleared ? null : (batchData?.results || null);
-  if (!matchData && !resultData) return;
+  const batchData = await getFromGS(`?action=batch&actions=${actions}`);
+  if (batchData?.matches) {
+    // GAS v8 batch thành công
+    matchData  = batchData.matches;
+    resultData = _resultsCleared ? null : (batchData.results || null);
+  } else {
+    // Fallback: GAS cũ → gọi riêng từng request
+    console.warn('[loadAllFromGS] Batch không khả dụng, dùng fallback');
+    const requests = _resultsCleared
+      ? [getFromGS('?action=matches'), Promise.resolve(null)]
+      : [getFromGS('?action=matches'), getFromGS('?action=results')];
+    const [md, rd] = await Promise.all(requests).catch(e => {
+      console.error('[loadAllFromGS fallback]', e);
+      setDot('err'); toast('⚠️ Lỗi kết nối GSheets'); return [null, null];
+    });
+    matchData = md; resultData = rd;
+  }
+
+  if (!matchData && !resultData) {
+    setDot('err'); toast('⚠️ GSheets không phản hồi!'); return;
+  }
 
   let gotMatches = false;
   if (matchData?.rows?.length > 1) {
@@ -3027,10 +3042,18 @@ function schedulePoll() {
 async function pollMatches() {
   if (!GS_URL) return;
   try {
-    // Dùng batch: 1 request thay vì 2
+    // Thử batch (GAS v8+), fallback 2 requests nếu cần
     const batchPoll = await getFromGS('?action=batch&actions=matches,live');
-    const data = batchPoll?.matches || null;
-    const liveData = batchPoll?.live || null;
+    let data, liveData;
+    if (batchPoll?.matches || batchPoll?.live) {
+      data = batchPoll.matches || null;
+      liveData = batchPoll.live || null;
+    } else {
+      [data, liveData] = await Promise.all([
+        getFromGS('?action=matches'),
+        getFromGS('?action=live&code=all')
+      ]);
+    }
     if (liveData?.rows?.length > 1) {
       const newLive = {};
       liveData.rows.slice(1).forEach(r => {
