@@ -1382,13 +1382,60 @@ function setDot(s) {
   if (txt) txt.textContent = {ok:'GSheets ✓',err:'GSheets ✗',syn:'Đang sync…'}[s]||'GSheets';
 }
 let _syncQueue = [], _syncBusy = false;
+
+// ── EventLog Buffer — gom rows, flush mỗi 1.5s hoặc khi đủ 8 rows ──
+// Thay vì N request riêng lẻ → 1 request batchLog duy nhất
+const _LOG_FLUSH_MS  = 1500; // flush sau 1.5s không có event mới
+const _LOG_FLUSH_MAX = 8;    // flush ngay khi đủ 8 rows
+let _logBuffer  = [];        // hàng đợi rows chưa flush
+let _logTimer   = null;      // debounce timer
+
+function logToEventBuffer(row) {
+  if (!GS_URL) return;
+  _logBuffer.push(row);
+  clearTimeout(_logTimer);
+  if (_logBuffer.length >= _LOG_FLUSH_MAX) {
+    _flushEventLog(); // đủ rows → flush ngay, không debounce
+  } else {
+    _logTimer = setTimeout(_flushEventLog, _LOG_FLUSH_MS);
+  }
+}
+
+function _flushEventLog() {
+  if (!GS_URL || _logBuffer.length === 0) return;
+  clearTimeout(_logTimer);
+  const rows = _logBuffer.splice(0); // lấy hết, reset buffer
+  const body = JSON.stringify({ action: 'batchLog', rows });
+  // fire-and-forget với keepalive — không block UI, không queue
+  fetch(GS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body,
+    redirect: 'follow',
+    keepalive: true,
+  }).catch(e => {
+    // Khi lỗi → đẩy rows trở lại đầu buffer để flush lần sau
+    _logBuffer.unshift(...rows);
+    console.warn('[EventLog] flush failed, buffered:', _logBuffer.length, e.message);
+  });
+}
+
+// Flush ngay khi thoát trang (beforeunload)
+window.addEventListener('beforeunload', () => { if (_logBuffer.length) _flushEventLog(); });
+
 async function syncGS(action, payload, _retryCount, giai) {
   if (!GS_URL) return;
-  // Đối với live score — ghi ngay, không queue để tránh delay
+  // log → đưa vào buffer thay vì queue riêng lẻ
+  if (action === 'log') {
+    const row = Array.isArray(payload) ? payload : [payload];
+    logToEventBuffer(row);
+    return;
+  }
+  // live/deleteLive/finishLive → ghi ngay, không queue
   if (action === 'live' || action === 'deleteLive' || action === 'finishLive') {
     return _doSync(action, payload, _retryCount||0, giai||'');
   }
-  // Các action khác: đưa vào queue để tránh race condition
+  // Các action khác (append, addMatch...) → queue tuần tự
   _syncQueue.push({ action, payload });
   if (!_syncBusy) _drainQueue();
 }
@@ -1402,7 +1449,6 @@ async function _drainQueue() {
 }
 async function _doSync(action, payload, retryCount, giai) {
   setDot('syn');
-  // Build body — nếu có giai, đính kèm vào để GAS không cần tra Matches sheet
   let bodyObj;
   if (Array.isArray(payload)) {
     bodyObj = { action, row: payload };
@@ -1419,15 +1465,13 @@ async function _doSync(action, payload, retryCount, giai) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body,
       redirect: 'follow',
-      // keepalive: true → request không bị cancel khi page reload/navigate
-      // Chỉ dùng cho live (fire-and-forget) để không block UI
       keepalive: isLive,
     });
     setDot('ok');
     setTimeout(() => setDot(''), 3000);
   } catch(e) {
     if (retryCount < 2) {
-      const delay = 1500 * (retryCount + 1); // giảm retry delay từ 2000 → 1500ms
+      const delay = 1500 * (retryCount + 1);
       setTimeout(() => _doSync(action, payload, retryCount + 1, giai), delay);
     } else {
       setDot('err');
