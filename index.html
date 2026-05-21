@@ -2151,7 +2151,10 @@ function renderMatchGrid() {
 }
 
 function _renderMatchCard(grid, m, idx) {
-    const done   = (m.matchScoreA !== null && m.matchScoreA !== undefined);
+    // "done" = matchList đã có điểm, HOẶC S.results local đã lưu, HOẶC vừa lưu xong (savedMatchKeys)
+    const done   = (m.matchScoreA !== null && m.matchScoreA !== undefined)
+                || !!S.results[m.key]
+                || _savedMatchKeys.has(m.key);
     const active = S.currentMatch?.key === m.key;
     const isLive = active && matchStarted && !done; // đang chấm điểm chưa lưu
     const btn    = document.createElement('button');
@@ -2448,6 +2451,8 @@ function nextGame() {
 
 // Set các key LiveScore đã bị xoá — poll sẽ bỏ qua, không restore lại
 const _clearedLiveKeys = new Set();
+// Set các key trận đã lưu kết quả — renderMatchCard force "done" dù matchList chưa cập nhật
+const _savedMatchKeys  = new Set();
 
 function resetMatch() {
   if (!confirm('Đặt lại về 0–0?\n\nTrận đấu sẽ về trạng thái "Chưa thi đấu".')) return;
@@ -2652,11 +2657,19 @@ function confirmSave() {
   toast(`💾 Đã lưu: ${m.code} · ${scoreOrig_A}–${scoreOrig_B} · ${winnerLabel}`, 4000);
   _setMatchStarted(false, true);
   clearActiveMatch(); // Xóa snapshot vì trận đã lưu xong
-  if (m.key) delete liveScores[m.key];
+
+  // ── Ngăn polling restore lại trạng thái live/đang thi đấu ──
+  // Phải làm TRƯỚC khi render để card hiện "Hoàn thành" ngay lập tức
+  if (m.key) {
+    delete liveScores[m.key];
+    _clearedLiveKeys.add(m.key);  // polling sẽ bỏ qua key này hoàn toàn
+    _savedMatchKeys.add(m.key);   // renderMatchCard dùng để force "done"
+  }
   updateTossBar();
+  renderMatchGrid(); // render ngay với trạng thái done chính xác
+
   if (GS_URL) {
     // Đánh dấu LiveScore = finished (KHÔNG xóa) để Admin vẫn thấy tỉ số cuối
-    // Trận sẽ rời khỏi "Đang thi đấu" ngay lập tức
     const m3 = S.currentMatch || m;
     finishLiveGS(m3, scoreOrig_A, scoreOrig_B);
     syncGS('append', [
@@ -3204,7 +3217,7 @@ async function pollMatches() {
       liveData.rows.slice(1).forEach(r => {
         const key = String(r[0]||'').trim();
         if (!key) return;
-        // HDR_LIVE: Key(0) | Giải đấu(1) | Đội A(2) | Điểm A(3) | Điểm B(4) | Đội B(5) | Giao bóng(6) | Game(7) | Cập nhật lúc(8)
+        // HDR_LIVE v9: Key(0)|Giải đấu(1)|Đội A(2)|Điểm A(3)|Điểm B(4)|Đội B(5)|Giao bóng(6)|Game(7)|Cập nhật lúc(8)|Trạng thái(9)
         newLive[key] = {
           teamA:  String(r[2]||'').trim(),
           scoreA: Number(r[3])||0,
@@ -3212,17 +3225,23 @@ async function pollMatches() {
           teamB:  String(r[5]||'').trim(),
           serve:  String(r[6]||''),
           game:   String(r[7]||''),
-          updatedAt: String(r[8]||'')
+          updatedAt: String(r[8]||''),
+          status: String(r[9]||''), // 'playing' | 'finished' | '' (cũ)
         };
       });
       const myKey = S.currentMatch?.key;
       Object.keys(newLive).forEach(k => {
-        // Bỏ qua key đã bị reset (không restore lại)
+        // Bỏ qua key đã bị reset hoặc đã lưu kết quả — không restore lại
         if (_clearedLiveKeys.has(k)) return;
+        if (_savedMatchKeys.has(k))  return;
+        // Bỏ qua nếu GAS đã đánh dấu finished (v9+)
+        if (newLive[k]?.status === 'finished') return;
         if (k !== myKey) liveScores[k] = newLive[k];
       });
       Object.keys(liveScores).forEach(k => {
         if (k !== myKey && !newLive[k]) delete liveScores[k];
+        // Dọn key đã lưu khỏi liveScores nếu polling kéo về
+        if (_savedMatchKeys.has(k) || _clearedLiveKeys.has(k)) delete liveScores[k];
       });
       renderMatchGrid();
     } else if (!liveData) {
@@ -3265,6 +3284,12 @@ async function pollMatches() {
     _lastMatchCount = newCount;
     matchList = newMatches;
     saveMatchList();
+    // Dọn _savedMatchKeys cho các trận đã có điểm chính thức từ GAS
+    newMatches.forEach(m => {
+      if ((m.matchScoreA !== null && m.matchScoreA !== undefined) && _savedMatchKeys.has(m.key)) {
+        _savedMatchKeys.delete(m.key);
+      }
+    });
     syncDropdownsFromData(true);
     syncBXHDropdowns();
     if (added > 0) {
