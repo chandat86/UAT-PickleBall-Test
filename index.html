@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+<!-- Pickleball v3 | Optimized 2026-05-21 | Batch API | Debounce | Timeout | No-cache -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Da Nang Referee – Pickleball</title>
@@ -1380,28 +1381,58 @@ function setDot(s) {
   if (dot) dot.className = 'gs-dot '+(s||'');
   if (txt) txt.textContent = {ok:'GSheets ✓',err:'GSheets ✗',syn:'Đang sync…'}[s]||'GSheets';
 }
-async function syncGS(action, row, _retry) {
+let _syncQueue = [], _syncBusy = false;
+async function syncGS(action, payload, _retryCount) {
   if (!GS_URL) return;
+  // Đối với live score — ghi ngay, không queue để tránh delay
+  if (action === 'live' || action === 'deleteLive') {
+    return _doSync(action, payload, _retryCount||0);
+  }
+  // Các action khác: đưa vào queue để tránh race condition
+  _syncQueue.push({ action, payload });
+  if (!_syncBusy) _drainQueue();
+}
+async function _drainQueue() {
+  _syncBusy = true;
+  while (_syncQueue.length) {
+    const { action, payload } = _syncQueue.shift();
+    await _doSync(action, payload, 0);
+  }
+  _syncBusy = false;
+}
+async function _doSync(action, payload, retryCount) {
   setDot('syn');
+  const body = Array.isArray(payload)
+    ? JSON.stringify({ action, row: payload })
+    : JSON.stringify(Object.assign({ action }, payload));
   try {
     await fetch(GS_URL, {
-      method:'POST', mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({action, row})
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body,
+      redirect: 'follow'
     });
     setDot('ok');
-    setTimeout(()=>setDot(''), 4000);
+    setTimeout(() => setDot(''), 3000);
   } catch(e) {
-    if (!_retry) {
-      setTimeout(() => syncGS(action, row, true), 3000);
-    } else { setDot('err'); }
+    if (retryCount < 2) {
+      const delay = 2000 * (retryCount + 1);
+      setTimeout(() => _doSync(action, payload, retryCount + 1), delay);
+    } else {
+      setDot('err');
+      console.warn('[syncGS] Failed after retries:', action, e.message);
+    }
   }
 }
-async function getFromGS(params = '') {
+async function getFromGS(params = '', timeout=20000) {
   if (!GS_URL) return null;
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), timeout);
   try {
-    const url = GS_URL + params + (params.includes('?') ? '&' : '?') + 't=' + Date.now();
-    const res  = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const url = GS_URL + params + (params.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    const res  = await fetch(url, { method: 'GET', redirect: 'follow', signal: ctrl.signal,
+                                    headers: { 'Cache-Control': 'no-cache' } });
+    clearTimeout(tid);
     const text = await res.text();
     let data;
     if (text.trim().startsWith('{')) {
@@ -1412,11 +1443,17 @@ async function getFromGS(params = '') {
     }
     return (data && data.ok) ? data : null;
   } catch(e) {
-    console.warn('getFromGS error:', e);
+    clearTimeout(tid);
+    if (e.name !== 'AbortError') console.warn('getFromGS error:', e.message);
     return null;
   }
 }
 let _resultsCleared = false;
+
+// Cache nội bộ để tránh reload khi không cần
+const _refCache = {};
+function _refCacheGet(k) { const c=_refCache[k]; if(c && Date.now()-c.ts<45000) return c.d; return null; }
+function _refCacheSet(k,d) { _refCache[k]={ts:Date.now(),d}; }
 
 async function loadAllFromGS() {
   if (!GS_URL) { toast('⚠️ Chưa nhập URL GSheets!'); return; }
@@ -1426,15 +1463,15 @@ async function loadAllFromGS() {
   else toast('🔄 Đang làm mới…');
   setDot('syn');
 
-  // Tải song song: matches + results (+ live nếu cần)
-  const requests = _resultsCleared
-    ? [getFromGS('?action=matches'), Promise.resolve(null)]
-    : [getFromGS('?action=matches'), getFromGS('?action=results')];
-
-  const [matchData, resultData] = await Promise.all(requests).catch(e => {
+  // Dùng BATCH endpoint: 1 request duy nhất thay vì 2 request song song
+  const actions = _resultsCleared ? 'matches' : 'matches,results';
+  const batchData = await getFromGS(`?action=batch&actions=${actions}`).catch(e => {
     console.error('[loadAllFromGS]', e);
-    setDot('err'); toast('⚠️ Lỗi kết nối GSheets'); return [null, null];
+    setDot('err'); toast('⚠️ Lỗi kết nối GSheets'); return null;
   });
+
+  const matchData  = batchData?.matches  || null;
+  const resultData = _resultsCleared ? null : (batchData?.results || null);
   if (!matchData && !resultData) return;
 
   let gotMatches = false;
@@ -1611,7 +1648,8 @@ async function testGs() {
 }
 let liveScores = {};
 
-async function pushLiveScore() {
+let _livePushTimer = null;
+function pushLiveScore() {
   if (!GS_URL || !S.currentMatch || !matchStarted) return;
   const m = S.currentMatch;
   const origSideA  = m.origSideA || 'a';
@@ -1626,14 +1664,18 @@ async function pushLiveScore() {
   };
   renderMatchGrid(); // cập nhật tỉ số trên grid ngay
 
-  const row = [
-    m.key,          // composite key noidung|bang|code để nhận diện đúng
-    teamAOrig, scoreAOrig, scoreBOrig, teamBOrig,
-    S.server === 'a' ? teamAOrig : teamBOrig,
-    'Game ' + S.game,
-    now()
-  ];
-  syncGS('live', row);
+  // Debounce 400ms: tránh gửi liên tục khi bấm điểm nhanh
+  clearTimeout(_livePushTimer);
+  _livePushTimer = setTimeout(() => {
+    const row = [
+      m.key,
+      teamAOrig, scoreAOrig, scoreBOrig, teamBOrig,
+      S.server === 'a' ? teamAOrig : teamBOrig,
+      'Game ' + S.game,
+      now()
+    ];
+    syncGS('live', row);
+  }, 400);
 }
 let matchList = [];
 try { matchList = JSON.parse(localStorage.getItem('pb_ml6')||'[]'); } catch(e){}
@@ -2957,7 +2999,7 @@ let _lastMatchCount = 0;
 let _pollInterval   = null;
 let _appFocused     = !document.hidden;
 
-const POLL_FOCUSED    = 10000; // 10 giây khi đang dùng app
+const POLL_FOCUSED    = 8000;  // 8 giây khi đang dùng app — đủ nhanh để sync
 const POLL_BACKGROUND = 60000; // 60 giây khi app chạy ngầm
 
 function startAutoPoll() {
@@ -2976,6 +3018,8 @@ function onVisibilityChange() {
 }
 
 function schedulePoll() {
+  // Khi đang chấm điểm: poll chỉ để sync trận khác trên grid
+  // Khi không chấm: poll để cập nhật danh sách trận
   const ms = _appFocused ? POLL_FOCUSED : POLL_BACKGROUND;
   _pollInterval = setInterval(pollMatches, ms);
 }
@@ -2983,21 +3027,24 @@ function schedulePoll() {
 async function pollMatches() {
   if (!GS_URL) return;
   try {
-    const [data, liveData] = await Promise.all([
-      getFromGS('?action=matches'),
-      getFromGS('?action=live&code=all')
-    ]);
+    // Dùng batch: 1 request thay vì 2
+    const batchPoll = await getFromGS('?action=batch&actions=matches,live');
+    const data = batchPoll?.matches || null;
+    const liveData = batchPoll?.live || null;
     if (liveData?.rows?.length > 1) {
       const newLive = {};
       liveData.rows.slice(1).forEach(r => {
         const key = String(r[0]||'').trim();
         if (!key) return;
+        // HDR_LIVE: Key(0) | Giải đấu(1) | Đội A(2) | Điểm A(3) | Điểm B(4) | Đội B(5) | Giao bóng(6) | Game(7) | Cập nhật lúc(8)
         newLive[key] = {
-          scoreA: Number(r[2])||0,
-          scoreB: Number(r[3])||0,
-          teamA:  String(r[1]||'').trim(),
-          teamB:  String(r[4]||'').trim(),
-          updatedAt: String(r[7]||'')
+          teamA:  String(r[2]||'').trim(),
+          scoreA: Number(r[3])||0,
+          scoreB: Number(r[4])||0,
+          teamB:  String(r[5]||'').trim(),
+          serve:  String(r[6]||''),
+          game:   String(r[7]||''),
+          updatedAt: String(r[8]||'')
         };
       });
       const myKey = S.currentMatch?.key;
