@@ -2355,19 +2355,26 @@ let matchStarted = false; // trọng tài phải bấm Bắt đầu mới nhập
 
 function startMatch() {
   if (!S.currentMatch) { toast('⚠️ Chưa chọn trận!'); return; }
+  const isResume = matchStarted === false && (S.a > 0 || S.b > 0);
   matchStarted = true;
   const btn = document.getElementById('btn-start');
   if (btn) { btn.textContent = '🟢 Đang thi đấu'; btn.classList.add('started'); }
   document.querySelector('.scoreboard')?.classList.remove('not-started');
   const bar = document.getElementById('toss-bar');
   if (bar) bar.style.display = 'none';
-  pushLog('▶ Bắt đầu trận', null);
-  logToGS('▶ Bắt đầu trận', '');
-  toast('▶ Trận đấu bắt đầu!');
-  saveActiveMatch(); // Lưu ngay khi bắt đầu
+  if (isResume) {
+    // Tiếp tục từ tỉ số đang có — không log lại "▶ Bắt đầu" mới
+    pushLog(`▶ Tiếp tục: ${S.a}–${S.b} Game ${S.game}`, null);
+    logToGS(`▶ Tiếp tục: ${S.a}–${S.b}`, '');
+    toast(`▶ Tiếp tục: ${S.currentMatch.code} · ${S.a}–${S.b}`);
+  } else {
+    pushLog('▶ Bắt đầu trận', null);
+    logToGS('▶ Bắt đầu trận', '');
+    toast('▶ Trận đấu bắt đầu!');
+  }
+  saveActiveMatch();
   renderMatchGrid();
   render();
-  saveActiveMatch();
 }
 
 function _setMatchStarted(started, done) {
@@ -2623,13 +2630,30 @@ function confirmSave() {
 }
 
 function loadMatch(idx) {
-  const m=matchList[idx];
-  S.currentMatch={...m};
+  const m = matchList[idx];
+
+  // ── Nếu đang bấm vào CÙNG TRẬN đang chấm (matchStarted) → GIỮ NGUYÊN tỉ số ──
+  const isSameMatch = S.currentMatch && S.currentMatch.key === m.key;
+  if (isSameMatch && matchStarted) {
+    // Chỉ cập nhật thông tin metadata, KHÔNG reset điểm/server/game
+    S.currentMatch = { ...S.currentMatch, ...m,
+      origTeamA: S.currentMatch.origTeamA || m.teamA,
+      origTeamB: S.currentMatch.origTeamB || m.teamB,
+      origSideA: S.currentMatch.origSideA || 'a',
+    };
+    toast(`▶ Tiếp tục: ${m.code} · ${S.a}–${S.b}`);
+    renderMatchGrid();
+    render();
+    return;
+  }
+
+  // ── Trận mới hoặc chưa bắt đầu → load bình thường ──
+  S.currentMatch = { ...m };
   S.currentMatch.origTeamA = m.teamA;
   S.currentMatch.origTeamB = m.teamB;
   S.currentMatch.origSideA = 'a';
-  S.currentMatch.playersA = _parsePlayers(m.teamA);
-  S.currentMatch.playersB = _parsePlayers(m.teamB);
+  S.currentMatch.playersA  = _parsePlayers(m.teamA);
+  S.currentMatch.playersB  = _parsePlayers(m.teamB);
   S.playersA = S.currentMatch.playersA;
   S.playersB = S.currentMatch.playersB;
 
@@ -2646,7 +2670,8 @@ function loadMatch(idx) {
   }
   S.game=1; S.server='a'; S.serveNum=2; S.isFirstServe=true; S.history=[];
   S.serverPlayerIdx=0; S.posA=[0,1]; S.posB=[0,1];
-  S.timeouts={a:0,b:0}; S.medicals={a:0,b:0}; _pm.serverSide=null; _pm.serverPlayerIdx=0; _pm.receiverPlayerIdx=0;
+  S.timeouts={a:0,b:0}; S.medicals={a:0,b:0};
+  _pm.serverSide=null; _pm.serverPlayerIdx=0; _pm.receiverPlayerIdx=0;
   swapNotified=false;
   const snotice = document.getElementById('swap-notice');
   clearTimeout(snotice?._hideTimer);
@@ -2659,10 +2684,10 @@ function loadMatch(idx) {
     const ndTag   = `<span class="mi-nd">${m.noidung||''}</span>`;
     miEl.innerHTML = codeTag + ndTag;
   }
-  pushLog(`📋 Mở: ${m.code}`,null);
+  pushLog(`📋 Mở: ${m.code}`, null);
   _setMatchStarted(false, matchHasScore);
   updateTossBar();
-  saveActiveMatch(); // Lưu trận vừa chọn
+  saveActiveMatch();
   render(); renderMatchGrid();
   toast(`📋 ${m.code}: ${sn(m.teamA)} vs ${sn(m.teamB)}`);
 }
@@ -3980,11 +4005,17 @@ function licEnter() {
   if (_restored && S.currentMatch) {
     // Hiển thị scoreboard ngay với dữ liệu từ snapshot
     _setMatchStarted(matchStarted, false);
+    // Nếu có tỉ số đang dở → đổi nhãn nút thành "▶ Tiếp tục"
+    if (!matchStarted && (S.a > 0 || S.b > 0)) {
+      const btn = document.getElementById('btn-start');
+      if (btn) btn.textContent = '▶ Tiếp tục';
+    }
     updateTossBar();
     render();
     renderMatchGrid();
     const m = S.currentMatch;
-    toast(`⚡ Khôi phục: ${m.code} · ${S.a}–${S.b}`, 3000);
+    const scoreStr = `${S.a}–${S.b}`;
+    toast(`⚡ Khôi phục: ${m.code} · ${scoreStr} · Game ${S.game}`, 3500);
   }
 
   if (GS_URL) {
