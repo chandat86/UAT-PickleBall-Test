@@ -2469,8 +2469,25 @@ async function clearLiveGS(m) {
   if (!GS_URL || !m) return;
   const key = (m.noidung||'') + '|' + (m.bang||'') + '|' + (m.code||'');
   try {
-    // Gửi action deleteLive để GAS xoá hẳn row khỏi sheet LiveScore
+    // Gửi action deleteLive để GAS xoá hẳn row khỏi sheet LiveScore (thoát trận không lưu)
     await syncGS('deleteLive', { key });
+  } catch(e) {}
+}
+
+// Đánh dấu trận hoàn thành trong LiveScore (thay vì xóa)
+// Admin sẽ thấy tỉ số cuối nhưng trận rời khỏi "Đang thi đấu"
+async function finishLiveGS(m, scoreA, scoreB) {
+  if (!GS_URL || !m) return;
+  const key = (m.noidung||'') + '|' + (m.bang||'') + '|' + (m.code||'');
+  try {
+    await syncGS('finishLive', {
+      key,
+      scoreA, scoreB,
+      teamA: m.origTeamA || m.teamA || '',
+      teamB: m.origTeamB || m.teamB || '',
+      giai:  m.giai || '',
+      game:  S.game || 1,
+    });
   } catch(e) {}
 }
 
@@ -2626,6 +2643,10 @@ function confirmSave() {
   if (m.key) delete liveScores[m.key];
   updateTossBar();
   if (GS_URL) {
+    // Đánh dấu LiveScore = finished (KHÔNG xóa) để Admin vẫn thấy tỉ số cuối
+    // Trận sẽ rời khỏi "Đang thi đấu" ngay lập tức
+    const m3 = S.currentMatch || m;
+    finishLiveGS(m3, scoreOrig_A, scoreOrig_B);
     syncGS('append', [
       entry.savedAt, entry.giai||m2.giai||'', entry.noidung, entry.bang, entry.code,
       entry.teamA,   entry.teamB, entry.scoreA, entry.scoreB,
