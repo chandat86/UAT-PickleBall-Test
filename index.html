@@ -1382,11 +1382,11 @@ function setDot(s) {
   if (txt) txt.textContent = {ok:'GSheets ✓',err:'GSheets ✗',syn:'Đang sync…'}[s]||'GSheets';
 }
 let _syncQueue = [], _syncBusy = false;
-async function syncGS(action, payload, _retryCount) {
+async function syncGS(action, payload, _retryCount, giai) {
   if (!GS_URL) return;
   // Đối với live score — ghi ngay, không queue để tránh delay
-  if (action === 'live' || action === 'deleteLive') {
-    return _doSync(action, payload, _retryCount||0);
+  if (action === 'live' || action === 'deleteLive' || action === 'finishLive') {
+    return _doSync(action, payload, _retryCount||0, giai||'');
   }
   // Các action khác: đưa vào queue để tránh race condition
   _syncQueue.push({ action, payload });
@@ -1396,28 +1396,39 @@ async function _drainQueue() {
   _syncBusy = true;
   while (_syncQueue.length) {
     const { action, payload } = _syncQueue.shift();
-    await _doSync(action, payload, 0);
+    await _doSync(action, payload, 0, '');
   }
   _syncBusy = false;
 }
-async function _doSync(action, payload, retryCount) {
+async function _doSync(action, payload, retryCount, giai) {
   setDot('syn');
-  const body = Array.isArray(payload)
-    ? JSON.stringify({ action, row: payload })
-    : JSON.stringify(Object.assign({ action }, payload));
+  // Build body — nếu có giai, đính kèm vào để GAS không cần tra Matches sheet
+  let bodyObj;
+  if (Array.isArray(payload)) {
+    bodyObj = { action, row: payload };
+    if (giai) bodyObj.giai = giai;
+  } else {
+    bodyObj = Object.assign({ action }, payload);
+    if (giai && !bodyObj.giai) bodyObj.giai = giai;
+  }
+  const body = JSON.stringify(bodyObj);
+  const isLive = (action === 'live');
   try {
     await fetch(GS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body,
-      redirect: 'follow'
+      redirect: 'follow',
+      // keepalive: true → request không bị cancel khi page reload/navigate
+      // Chỉ dùng cho live (fire-and-forget) để không block UI
+      keepalive: isLive,
     });
     setDot('ok');
     setTimeout(() => setDot(''), 3000);
   } catch(e) {
     if (retryCount < 2) {
-      const delay = 2000 * (retryCount + 1);
-      setTimeout(() => _doSync(action, payload, retryCount + 1), delay);
+      const delay = 1500 * (retryCount + 1); // giảm retry delay từ 2000 → 1500ms
+      setTimeout(() => _doSync(action, payload, retryCount + 1, giai), delay);
     } else {
       setDot('err');
       console.warn('[syncGS] Failed after retries:', action, e.message);
@@ -1679,7 +1690,7 @@ function pushLiveScore() {
   };
   renderMatchGrid(); // cập nhật tỉ số trên grid ngay
 
-  // Debounce 400ms: tránh gửi liên tục khi bấm điểm nhanh
+  // Debounce 150ms (giảm từ 400ms) — đủ để gộp bấm liên tiếp, không delay cảm nhận
   clearTimeout(_livePushTimer);
   _livePushTimer = setTimeout(() => {
     const row = [
@@ -1689,8 +1700,9 @@ function pushLiveScore() {
       'Game ' + S.game,
       now()
     ];
-    syncGS('live', row);
-  }, 400);
+    // Gửi kèm giai → GAS không cần đọc Matches sheet để tra tên giải
+    syncGS('live', row, 0, m.giai || '');
+  }, 150);
 }
 let matchList = [];
 try { matchList = JSON.parse(localStorage.getItem('pb_ml6')||'[]'); } catch(e){}
