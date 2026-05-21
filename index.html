@@ -1800,6 +1800,69 @@ let S = {
 try { S.results = JSON.parse(localStorage.getItem('pb_res6')||'{}'); } catch(e){}
 let evLog = [];
 try { evLog = JSON.parse(localStorage.getItem('pb_ev6')||'[]'); } catch(e){}
+
+// ── Lưu / Khôi phục trận đang chấm điểm vào localStorage ──────
+const _SAV_KEY = 'pb_active7';
+
+function saveActiveMatch() {
+  if (!S.currentMatch) return;
+  try {
+    const snap = {
+      S: {
+        a: S.a, b: S.b,
+        server: S.server, serveNum: S.serveNum,
+        isFirstServe: S.isFirstServe,
+        game: S.game,
+        serverPlayerIdx: S.serverPlayerIdx,
+        playersA: S.playersA, playersB: S.playersB,
+        posA: S.posA, posB: S.posB,
+        timeouts: S.timeouts, medicals: S.medicals,
+        currentMatch: S.currentMatch,
+        history: S.history.slice(-30),
+      },
+      pm: {
+        serverSide: _pm.serverSide,
+        serverPlayerIdx: _pm.serverPlayerIdx,
+        receiverPlayerIdx: _pm.receiverPlayerIdx
+      },
+      matchStarted,
+      evLog: evLog.slice(-50),
+      ts: Date.now()
+    };
+    localStorage.setItem(_SAV_KEY, JSON.stringify(snap));
+  } catch(e) { console.warn('saveActiveMatch:', e); }
+}
+
+function clearActiveMatch() {
+  try { localStorage.removeItem(_SAV_KEY); } catch(e) {}
+}
+
+function restoreActiveMatch() {
+  try {
+    const raw = localStorage.getItem(_SAV_KEY);
+    if (!raw) return false;
+    const snap = JSON.parse(raw);
+    // Bỏ qua snapshot cũ hơn 8 tiếng
+    if (Date.now() - (snap.ts||0) > 8 * 3600 * 1000) {
+      clearActiveMatch(); return false;
+    }
+    const sv = snap.S;
+    Object.assign(S, sv);
+    matchStarted = snap.matchStarted || false;
+    if (snap.evLog) evLog = snap.evLog;
+    // Khôi phục player manager state
+    if (snap.pm && typeof _pm !== 'undefined') {
+      _pm.serverSide        = snap.pm.serverSide;
+      _pm.serverPlayerIdx   = snap.pm.serverPlayerIdx;
+      _pm.receiverPlayerIdx = snap.pm.receiverPlayerIdx;
+    }
+    return true;
+  } catch(e) {
+    console.warn('restoreActiveMatch:', e);
+    return false;
+  }
+}
+// ──────────────────────────────────────────────────────────────
 function render() {
   document.getElementById('score-a').textContent = S.a;
   document.getElementById('score-b').textContent = S.b;
@@ -1812,6 +1875,8 @@ function render() {
   checkAutoSwap();
   updateTossBar();
   _updateTimerBtnLabels();
+  // Auto-save mỗi lần render (điểm thay đổi, server thay đổi...)
+  saveActiveMatch();
 }
 
 function _renderPlayerRows() {
@@ -2299,8 +2364,10 @@ function startMatch() {
   pushLog('▶ Bắt đầu trận', null);
   logToGS('▶ Bắt đầu trận', '');
   toast('▶ Trận đấu bắt đầu!');
+  saveActiveMatch(); // Lưu ngay khi bắt đầu
   renderMatchGrid();
   render();
+  saveActiveMatch();
 }
 
 function _setMatchStarted(started, done) {
@@ -2543,6 +2610,7 @@ function confirmSave() {
   const winnerLabel = scoreOrig_A !== scoreOrig_B ? `🏆 ${sn(winner)} thắng` : '🤝 Hoà';
   toast(`💾 Đã lưu: ${m.code} · ${scoreOrig_A}–${scoreOrig_B} · ${winnerLabel}`, 4000);
   _setMatchStarted(false, true);
+  clearActiveMatch(); // Xóa snapshot vì trận đã lưu xong
   if (m.key) delete liveScores[m.key];
   updateTossBar();
   if (GS_URL) {
@@ -2594,6 +2662,7 @@ function loadMatch(idx) {
   pushLog(`📋 Mở: ${m.code}`,null);
   _setMatchStarted(false, matchHasScore);
   updateTossBar();
+  saveActiveMatch(); // Lưu trận vừa chọn
   render(); renderMatchGrid();
   toast(`📋 ${m.code}: ${sn(m.teamA)} vs ${sn(m.teamB)}`);
 }
@@ -3906,8 +3975,20 @@ function licEnter() {
   const saved = licLoad();
   if (saved) _applyPerm(saved);
 
+  // ── Khôi phục trận đang chấm ngay lập tức (không cần chờ GSheets) ──
+  const _restored = restoreActiveMatch();
+  if (_restored && S.currentMatch) {
+    // Hiển thị scoreboard ngay với dữ liệu từ snapshot
+    _setMatchStarted(matchStarted, false);
+    updateTossBar();
+    render();
+    renderMatchGrid();
+    const m = S.currentMatch;
+    toast(`⚡ Khôi phục: ${m.code} · ${S.a}–${S.b}`, 3000);
+  }
+
   if (GS_URL) {
-    if (!matchList.length) {
+    if (!matchList.length && !_restored) {
       const grid = document.getElementById('match-grid');
       if (grid) grid.innerHTML = `
         <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--g500)">
@@ -3915,10 +3996,15 @@ function licEnter() {
           <div style="font-size:12px;font-weight:600">Đang tải dữ liệu từ GSheets...</div>
         </div>`;
     }
+    // Load GSheets ngầm — không block UI
     setTimeout(async () => {
       await loadAllFromGS();
       startAutoPoll();
-    }, 400);
+      // Sau khi load xong, nếu đang restore → re-render để cập nhật grid
+      if (_restored && S.currentMatch) {
+        renderMatchGrid();
+      }
+    }, _restored ? 1000 : 400); // Nếu restore rồi thì load chậm hơn 1 chút
   }
 }
 
