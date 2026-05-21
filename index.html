@@ -1430,8 +1430,8 @@ async function getFromGS(params = '', timeout=20000) {
   const tid  = setTimeout(() => ctrl.abort(), timeout);
   try {
     const url = GS_URL + params + (params.includes('?') ? '&' : '?') + '_t=' + Date.now();
-    const res  = await fetch(url, { method: 'GET', redirect: 'follow', signal: ctrl.signal,
-                                    headers: { 'Cache-Control': 'no-cache' } });
+    // KHÔNG dùng custom header - GAS chỉ accept simple requests (không preflight)
+    const res  = await fetch(url, { method: 'GET', redirect: 'follow', signal: ctrl.signal });
     clearTimeout(tid);
     const text = await res.text();
     let data;
